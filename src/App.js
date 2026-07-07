@@ -1956,25 +1956,25 @@ function App() {
 
                     <div className="payment-card">
 
-                      <div className="card-top-section card-1-top">
+                     {/* <div className="card-top-section card-1-top">*/}
                         {/* <div className="qlub-branding">
                   <span className="pb-text">Powered By</span>
                   <span className="qlub-logo">qlub <span className="qlub-dots">::</span></span>
                 </div> */}
-                        <div className="brand-grid">
+                      {/*  <div className="brand-grid">
                           <VoucherBrand />
                           <MastercardBrand />
                           <NetsBrand />
                           <PayNowBrand />
                           <VisaBrand />
-                          {/* <GPayBrand />
+                           <GPayBrand />
                   <MastercardBrand />
                   <UnionPayBrand />
                   <ApplePayBrand />
                   <VisaBrand />
-                  <AmexBrand /> */}
+                  <AmexBrand /> 
                         </div>
-                      </div>
+                      </div>*/}
 
                       { /*<button
                         className="payment-btn"
@@ -1986,25 +1986,22 @@ function App() {
                         Pay Online
                       </button>*/}
 
-                      <button
+                    {/*  <button
                         className="payment-btn"
                         onClick={() => {
                           setShowPaymentPopup(false);
-                          // completeOrder() (called on YeahPay success) handles:
-                          // 1. StatusCode = 2 in RestaurantOrderDetailCur
-                          // 2. Insert SettlementHeader
-                          // 3. Insert SettlementItemDetail
+                         
                           handlePayOnline();
                         }}
                       >
                         Pay Online
-                      </button>
+                      </button>*/}
 
                     </div>
 
-                    <div className="payment-or">
+                    {/* <div className="payment-or">
                       OR
-                    </div>
+                    </div> */}
 
                     <div className="payment-card">
 
