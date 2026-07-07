@@ -2,11 +2,8 @@ const express = require("express");
 const router = express.Router();
 const sql = require("mssql");
 const { poolPromise } = require("../config/db");
+// const { authenticateToken } = require("../middleware/auth");
 
-// Simple dummy auth middleware since we are on the QR POS app
-const authenticateToken = (req, res, next) => {
-  next();
-};
 
 // ─────────────────────────────────────────────────────────────────
 // SIMPLE IN-MEMORY CACHE (same pattern as menu.js)
@@ -105,16 +102,17 @@ router.get("/config/:DishId", async (req, res) => {
       .input("DishId", sql.UniqueIdentifier, DishId)
       .query(`
         SELECT
-          ComboGroupId,
-          GroupName,
-          DisplayOrder,
-          MinSelection,
-          MaxSelection,
-          IsMultiSelect
-        FROM ComboGroupMaster WITH (NOLOCK)
-        WHERE ParentComboDishId = @DishId
-          AND IsActive = 1
-        ORDER BY DisplayOrder ASC
+          cgm.ComboGroupId,
+          cgm.GroupName,
+          cgm.DisplayOrder,
+          cgm.MinSelection,
+          cgm.MaxSelection,
+          cgm.IsMultiSelect
+        FROM ComboGroupMaster cgm WITH (NOLOCK)
+        INNER JOIN ParentDishComboGroupMapping pdcgm WITH (NOLOCK) ON cgm.ComboGroupId = pdcgm.ComboGroupId
+        WHERE pdcgm.ParentDishId = @DishId
+          AND cgm.IsActive = 1
+        ORDER BY cgm.DisplayOrder ASC
       `);
 
     const groups = groupsResult.recordset;
@@ -207,11 +205,12 @@ router.get("/config/:DishId", async (req, res) => {
 });
 
 // All write combo routes require authentication
-router.use(authenticateToken);
+// router.use(authenticateToken);
 
 // ─────────────────────────────────────────────────────────────────
 // POST /api/combo
 // Creates a new combo configuration.
+// Body: { dishId, groups: [{ groupName, displayOrder, minSelection, maxSelection, isMultiSelect, dishes: [{ dishId, surcharge, isDefault, sortOrder }] }] }
 // ─────────────────────────────────────────────────────────────────
 router.post("/", async (req, res) => {
   const { dishId, groups } = req.body;
@@ -321,7 +320,7 @@ router.put("/:DishId", async (req, res) => {
     return res.status(400).json({ success: false, error: "groups array is required." });
   }
 
-  // Re-use POST logic with same dishId
+  // Re-use POST logic with same dishId — it clears and rebuilds groups
   req.body.dishId = DishId;
   return router.handle({ ...req, method: "POST", url: "/" }, res, () => {});
 });
@@ -329,6 +328,7 @@ router.put("/:DishId", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // DELETE /api/combo/:DishId
 // Soft-deletes the combo by setting IsCombo = 0 on the dish.
+// Groups/mappings remain for historical reference but are no longer served.
 // ─────────────────────────────────────────────────────────────────
 router.delete("/:DishId", async (req, res) => {
   try {
