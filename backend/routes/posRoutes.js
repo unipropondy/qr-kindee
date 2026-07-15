@@ -612,4 +612,26 @@ router.get("/company/settings", async (req, res) => {
   }
 });
 
+/* ================= APP SETTINGS ================= */
+router.get("/app-settings", async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request().query(`
+      SELECT TOP 1 enablelogin AS EnableLogin
+      FROM AppSettings
+    `);
+
+    res.json({
+      success: true,
+      enableLogin: Number(result.recordset[0]?.EnableLogin || 0)
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+});
+
 module.exports = router;

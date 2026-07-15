@@ -83,6 +83,21 @@ body {
   cursor: pointer;
 }
 
+.logout-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
 .badge {
   position: absolute;
   top: -5px;

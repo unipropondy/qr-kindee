@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 // import axios from "axios";
+import LoginPage from "./LoginPage";
 import "./App.css";
 import { BASE_URL } from "./Configs/api";
 import { QRCodeSVG } from "qrcode.react";
@@ -17,6 +18,7 @@ function App() {
   const skipSaveRef = useRef(false);
   const deleteInProgressRef = useRef(false);
   const actionRef = useRef(""); // "INSERT", "UPDATE", "DELETE"
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
 
   const API = `${BASE_URL}/api`;
   const [search, setSearch] = useState("");
@@ -27,6 +29,8 @@ function App() {
   const [paymentDone, setPaymentDone] = useState(false);
   const [showCartPage, setShowCartPage] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+   const [loading, setLoading] = useState(true);
+  const [enableLogin, setEnableLogin] = useState(false);
 
   // Navigation states
   const [categories, setCategories] = useState([]);
@@ -97,6 +101,23 @@ function App() {
       }
     };
     fetchQRs();
+
+    const loadAppSettings = async () => {
+      try {
+        const res = await fetch(`${API}/app-settings`);
+        const data = await res.json();
+
+        if (data.success) {
+          setEnableLogin(Number(data.enableLogin) === 1);
+        }
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAppSettings();
 
     const loadCompanySettings = async () => {
       try {
@@ -634,6 +655,8 @@ function App() {
       0
     );
 
+     const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
+
     // GST Calculation
     const beforeGST = subTotal + serviceCharge;
 
@@ -641,8 +664,10 @@ function App() {
       beforeGST * (gstPercent / 100);
 
     // Final Total
+    const grandTotal = subTotal + serviceCharge;
+
     const totalAmount = (
-      subTotal + serviceCharge
+      grandTotal - promoAmount
     ).toFixed(2);
 
     console.log("Subtotal:", subTotal);
@@ -734,7 +759,7 @@ function App() {
   const completeOrder = async (posOrderId, amount) => {
     try {
       console.log("[completeOrder] Using POS orderId:", posOrderId, "Amount:", amount);
-
+      const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
       // CALL UNIFIED BACKEND ROUTE
       const res = await fetch(`${API}/order/complete-online-payment`, {
         method: "POST",
@@ -747,6 +772,7 @@ function App() {
           tableId: tableId,
           totalAmount: parseFloat(amount),
           paymentMethod: "ONLINE",
+          promoAmount,
           cart: cart
         })
       });
@@ -1285,20 +1311,7 @@ function App() {
     }
   };
 
-  // Service Charge Calculation
-  const eligibleAmount = cart.reduce(
-    (sum, item) =>
-      item.IsServiceCharge
-        ? sum +
-        Number(item.Price || item.price || 0) *
-        Number(item.qty || 1)
-        : sum,
-    0
-  );
-
-  const serviceCharge =
-    eligibleAmount * (serviceChargePercent / 100);
-
+  // Subtotal — sum of all cart items
   const subTotal = cart.reduce(
     (sum, item) =>
       sum +
@@ -1307,15 +1320,36 @@ function App() {
     0
   );
 
+  // Service Charge Calculation — applied to full subtotal
+  const serviceCharge =
+    subTotal * (serviceChargePercent / 100);
+
   // GST Calculation
   const beforeGST = subTotal + serviceCharge;
 
   const gstAmount =
     beforeGST * (gstPercent / 100);
 
-  const totalAmount = (
-    subTotal + serviceCharge
-  ).toFixed(2);
+    const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
+
+const totalAmount = Math.max(
+  0,
+  subTotal + serviceCharge + gstAmount - promoAmount
+).toFixed(2);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (enableLogin && !isLoggedIn) {
+    return (
+      <LoginPage
+        onLoginSuccess={() => {
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   return (
 
@@ -1391,6 +1425,22 @@ function App() {
                   >
                     🟢 Order Status
                   </button>
+
+                  {enableLogin && (
+                    <button
+                      className="logout-btn"
+                      onClick={() => {
+                        localStorage.removeItem("isLoggedIn");
+                        localStorage.removeItem("qr_pos_user");
+                        localStorage.removeItem("promoCode");
+                        localStorage.removeItem("promoAmount");
+                        localStorage.removeItem("memberId");
+                        window.location.reload();
+                      }}
+                    >
+                      🚪 Logout
+                    </button>
+                  )}
                 </div>
               </div>
 
