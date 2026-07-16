@@ -154,7 +154,7 @@ router.post('/', authenticateBridge, async (req, res) => {
         .query(`
           SELECT TOP 1 PrinterIP, PrinterName 
           FROM PrintMaster 
-          WHERE PrinterType = 2 AND CAST(KitchenTypeValue AS VARCHAR(50)) = CAST(@KitchenTypeValue AS VARCHAR(50)) AND IsActive = 1
+          WHERE PrinterType = 2 AND CAST(KitchenTypeValue AS VARCHAR(50)) = CAST(@KitchenTypeValue AS VARCHAR(50)) AND IsActive = 1 AND PrinterIP IS NOT NULL AND PrinterIP <> ''
         `);
       if (kitchenRes.recordset.length > 0) {
         printerIp = kitchenRes.recordset[0].PrinterIP;
@@ -163,13 +163,13 @@ router.post('/', authenticateBridge, async (req, res) => {
     }
 
     // Fallback or Direct check for Cashier (1) or TakeAway (3) or if Kitchen Printer not found
-    if (!printerIp) {
+    if (!printerIp || printerIp.trim() === '') {
       const printerRes = await pool.request()
         .input('PrinterType', sql.Int, pType)
         .query(`
           SELECT TOP 1 PrinterIP, PrinterName 
           FROM PrintMaster 
-          WHERE PrinterType = @PrinterType AND IsActive = 1
+          WHERE PrinterType = @PrinterType AND IsActive = 1 AND PrinterIP IS NOT NULL AND PrinterIP <> ''
         `);
       if (printerRes.recordset.length > 0) {
         printerIp = printerRes.recordset[0].PrinterIP;
