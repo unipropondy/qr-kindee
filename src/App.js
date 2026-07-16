@@ -29,7 +29,7 @@ function App() {
   const [paymentDone, setPaymentDone] = useState(false);
   const [showCartPage, setShowCartPage] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [enableLogin, setEnableLogin] = useState(false);
 
   // Navigation states
@@ -225,25 +225,35 @@ function App() {
     dish.Name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openModifiers = (dish) => {
-      console.log("Clicked");
-  console.log(enableCombo);
-  console.log(dish.IsCombo);
+  const openModifiers = async (dish) => {
+    console.log("Clicked");
+
     if (Number(enableCombo) === 1 && Number(dish.IsCombo) === 1) {
       openComboCustomizer(dish);
-    } else if (dish.HasModifier) {
-      setSelectedDish(dish);
-      loadModifiers(dish.DishId);
-      setSelectedModifierIds([]);
-      setCustomMods([]);
-      setShowModifier(true);
-    } else {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/modifiers/${dish.DishId}`);
+      const mods = await res.json();
+
+      if (mods && mods.length > 0) {
+        setSelectedDish(dish);
+        setModifiers(mods);
+        setSelectedModifierIds([]);
+        setCustomMods([]);
+        setShowModifier(true);
+      } else {
+        addToCartSimple(dish);
+      }
+    } catch (err) {
+      console.log(err);
       addToCartSimple(dish);
     }
   };
 
   const openComboCustomizer = async (dish) => {
-     console.log("Inside Combo");
+    console.log("Inside Combo");
     setSelectedDish(dish);
     setComboLoading(true);
     setComboError(null);
@@ -333,21 +343,21 @@ function App() {
 
   const calculateComboTotal = () => {
     if (!comboConfig) return 0;
-    
+
     let totalSurcharge = 0;
     (comboConfig.groups || []).forEach(group => {
       const selectedIds = comboSelections[group.comboGroupId] || [];
       const selectedOptions = (group.options || []).filter(o => selectedIds.includes(o.dishId));
       selectedOptions.forEach(opt => {
-        totalSurcharge += (opt.surcharge || 0) + (opt.dishPrice || 0);
+        totalSurcharge += (Number(opt.surcharge) || 0) + (Number(opt.dishPrice) || 0);
       });
     });
 
     const chosenModifiers = comboDishModifiers
       .filter(m => selectedComboModifierIds.includes(String(m.ModifierID || m.ModifierId || "")));
-    const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + Number(m.Price || 0), 0);
-    
-    return comboConfig.basePrice + totalSurcharge + modifierPriceTotal;
+    const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + (Number(m.Price) || 0), 0);
+
+    return (Number(comboConfig.basePrice) || 0) + totalSurcharge + modifierPriceTotal;
   };
 
   const handleAddComboToCart = () => {
@@ -396,12 +406,12 @@ function App() {
     let totalSurcharge = 0;
     chosenSelections.forEach(grp => {
       grp.items.forEach(opt => {
-        totalSurcharge += opt.surcharge + (opt.dishPrice || 0);
+        totalSurcharge += (Number(opt.surcharge) || 0) + (Number(opt.dishPrice) || 0);
       });
     });
 
-    const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + m.Price, 0);
-    const finalPrice = comboConfig.basePrice + totalSurcharge + modifierPriceTotal;
+    const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + (Number(m.Price) || 0), 0);
+    const finalPrice = (Number(comboConfig.basePrice) || 0) + totalSurcharge + modifierPriceTotal;
 
     const newCartItem = {
       ...selectedDish,
@@ -433,7 +443,7 @@ function App() {
         qty: 1,
       }));
 
-    const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + m.Price, 0);
+    const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + (Number(m.Price) || 0), 0);
     const finalPrice = Number(selectedDish.Price || selectedDish.price || 0) + modifierPriceTotal;
 
     const newCartItem = {
@@ -655,7 +665,7 @@ function App() {
       0
     );
 
-     const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
+    const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
 
     // GST Calculation
     const beforeGST = subTotal + serviceCharge;
@@ -776,7 +786,7 @@ function App() {
           cart: cart
         })
       });
-      
+
 
       const data = await res.json();
       console.log("UNIFIED COMPLETE PAYMENT RESPONSE:", data);
@@ -836,8 +846,8 @@ function App() {
               /^[0-9a-fA-F-]{36}$/.test(m.ModifierID)
           ),
 
-           comboSelections: item.comboSelections || [],
-  lineItemId: item.lineItemId || item.OrderDetailId || null,
+          comboSelections: item.comboSelections || [],
+          lineItemId: item.lineItemId || item.OrderDetailId || null,
 
           note: item.note || "",
 
@@ -954,8 +964,8 @@ function App() {
               qty: 1,
             })),
 
-             comboSelections: item.comboSelections || [],
-  lineItemId: item.lineItemId || item.OrderDetailId || null,
+          comboSelections: item.comboSelections || [],
+          lineItemId: item.lineItemId || item.OrderDetailId || null,
 
           note: item.note || "",
 
@@ -1027,11 +1037,11 @@ function App() {
           selectedMods:
             item.modifiers || [],
 
-             comboSelections:
-    item.comboSelections ||
-    (item.ComboDetailsJSON
-      ? JSON.parse(item.ComboDetailsJSON)
-      : []),
+          comboSelections:
+            item.comboSelections ||
+            (item.ComboDetailsJSON
+              ? JSON.parse(item.ComboDetailsJSON)
+              : []),
         }));
 
         skipSaveRef.current = true;
@@ -1330,12 +1340,12 @@ function App() {
   const gstAmount =
     beforeGST * (gstPercent / 100);
 
-    const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
+  const promoAmount = Number(localStorage.getItem("promoAmount") || 0);
 
-const totalAmount = Math.max(
-  0,
-  subTotal + serviceCharge + gstAmount - promoAmount
-).toFixed(2);
+  const totalAmount = Math.max(
+    0,
+    subTotal + serviceCharge + gstAmount - promoAmount
+  ).toFixed(2);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -1585,49 +1595,49 @@ const totalAmount = Math.max(
 
                               <div className="ci-info">
 
-                               <div className="ci-name">
+                                <div className="ci-name">
 
-  <div className="ci-title">
-    {item.Name || item.name}
-  </div>
+                                  <div className="ci-title">
+                                    {item.Name || item.name}
+                                  </div>
 
-  {item.selectedMods?.length > 0 && (
-    <div className="ci-mods">
-      {item.selectedMods
-        .map((m) => m.ModifierName)
-        .join(", ")}
-    </div>
-  )}
+                                  {item.selectedMods?.length > 0 && (
+                                    <div className="ci-mods">
+                                      {item.selectedMods
+                                        .map((m) => m.ModifierName)
+                                        .join(", ")}
+                                    </div>
+                                  )}
 
-  {item.comboSelections?.length > 0 && (
-    <div className="ci-mods">
-      {item.comboSelections.map((group, index) => (
-        <div key={index} style={{ marginTop: "4px" }}>
-          <div style={{ color: "#f97316", fontWeight: "600" }}>
-            {group.groupName}:
-          </div>
+                                  {item.comboSelections?.length > 0 && (
+                                    <div className="ci-mods">
+                                      {item.comboSelections.map((group, index) => (
+                                        <div key={index} style={{ marginTop: "4px" }}>
+                                          <div style={{ color: "#f97316", fontWeight: "600" }}>
+                                            {group.groupName}:
+                                          </div>
 
-          {group.items?.map((option, idx) => (
-            <div
-              key={idx}
-              style={{
-                marginLeft: "12px",
-                color: "#666",
-                fontSize: "13px",
-              }}
-            >
-              ↳ {option.name}
-              {((option.surcharge || 0) + (option.dishPrice || 0)) > 0 && (
-                <> (+${((option.surcharge || 0) + (option.dishPrice || 0)).toFixed(2)})</>
-              )}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  )}
+                                          {group.items?.map((option, idx) => (
+                                            <div
+                                              key={idx}
+                                              style={{
+                                                marginLeft: "12px",
+                                                color: "#666",
+                                                fontSize: "13px",
+                                              }}
+                                            >
+                                              ↳ {option.name}
+                                              {((option.surcharge || 0) + (option.dishPrice || 0)) > 0 && (
+                                                <> (+${((option.surcharge || 0) + (option.dishPrice || 0)).toFixed(2)})</>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
 
-</div>
+                                </div>
 
                                 <div className="qty-controls">
 
@@ -1802,7 +1812,7 @@ const totalAmount = Math.max(
                                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: isSelected ? '#f97316' : '#2c3e50' }}>{option.name}</div>
                                         {(option.surcharge > 0 || option.dishPrice > 0) && (
                                           <div style={{ fontSize: '11px', color: '#f97316', background: '#ffeedb', display: 'inline-block', padding: '1px 6px', borderRadius: '8px', marginTop: '4px' }}>
-                                            +${(option.surcharge + (option.dishPrice || 0)).toFixed(2)}
+                                            +${((Number(option.surcharge) || 0) + (Number(option.dishPrice) || 0)).toFixed(2)}
                                           </div>
                                         )}
                                       </div>
@@ -2006,8 +2016,8 @@ const totalAmount = Math.max(
 
                     <div className="payment-card">
 
-                     {/* <div className="card-top-section card-1-top">*/}
-                        {/* <div className="qlub-branding">
+                      {/* <div className="card-top-section card-1-top">*/}
+                      {/* <div className="qlub-branding">
                   <span className="pb-text">Powered By</span>
                   <span className="qlub-logo">qlub <span className="qlub-dots">::</span></span>
                 </div> */}
@@ -2036,7 +2046,7 @@ const totalAmount = Math.max(
                         Pay Online
                       </button>*/}
 
-                    {/*  <button
+                      {/*  <button
                         className="payment-btn"
                         onClick={() => {
                           setShowPaymentPopup(false);
