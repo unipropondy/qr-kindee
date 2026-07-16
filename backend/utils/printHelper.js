@@ -262,7 +262,7 @@ async function generateAndQueueKOTs(orderId) {
         LEFT JOIN DishGroupMaster dgm ON dish.DishGroupId = dgm.DishGroupId
         LEFT JOIN CategoryMaster cat ON dgm.CategoryId = cat.CategoryId
         LEFT JOIN CategoryKitchenType ckt ON dgm.CategoryId = ckt.CategoryId
-        LEFT JOIN PrintMaster pm ON CAST(ckt.KitchenTypeCode AS VARCHAR(50)) = CAST(pm.KitchenTypeValue AS VARCHAR(50))
+        LEFT JOIN PrintMaster pm ON CAST(ckt.KitchenTypeCode AS VARCHAR(50)) = CAST(pm.KitchenTypeValue AS VARCHAR(50)) AND pm.PrinterType = 2
         WHERE h.OrderNumber = @orderNo
         AND d.StatusCode NOT IN (0)
       `);
