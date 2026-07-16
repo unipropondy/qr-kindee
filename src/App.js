@@ -225,32 +225,65 @@ function App() {
     dish.Name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openModifiers = async (dish) => {
-    console.log("Clicked");
+  // const openModifiers = async (dish) => {
+  //   console.log("Clicked");
 
-    if (Number(enableCombo) === 1 && Number(dish.IsCombo) === 1) {
-      openComboCustomizer(dish);
+  //   if (Number(enableCombo) === 1 && Number(dish.IsCombo) === 1) {
+  //     openComboCustomizer(dish);
+  //     return;
+  //   }
+
+  //   try {
+  //     const res = await fetch(`${API}/modifiers/${dish.DishId}`);
+  //     const mods = await res.json();
+
+  //     if (mods && mods.length > 0) {
+  //       setSelectedDish(dish);
+  //       setModifiers(mods);
+  //       setSelectedModifierIds([]);
+  //       setCustomMods([]);
+  //       setShowModifier(true);
+  //     } else {
+  //       addToCartSimple(dish);
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //     addToCartSimple(dish);
+  //   }
+  // };
+
+  const openModifiers = async (dish) => {
+  // Combo
+  if (Number(enableCombo) === 1 && Number(dish.IsCombo) === 1) {
+    openComboCustomizer(dish);
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/modifiers/${dish.DishId}`);
+
+    if (!res.ok) {
+      addToCartSimple(dish);
       return;
     }
 
-    try {
-      const res = await fetch(`${API}/modifiers/${dish.DishId}`);
-      const mods = await res.json();
+    const mods = await res.json();
+    console.log("Modifiers:", mods);
 
-      if (mods && mods.length > 0) {
-        setSelectedDish(dish);
-        setModifiers(mods);
-        setSelectedModifierIds([]);
-        setCustomMods([]);
-        setShowModifier(true);
-      } else {
-        addToCartSimple(dish);
-      }
-    } catch (err) {
-      console.log(err);
+    if (Array.isArray(mods) && mods.length > 0) {
+      setSelectedDish(dish);
+      setModifiers(mods);
+      setSelectedModifierIds([]);
+      setCustomMods([]);
+      setShowModifier(true);
+    } else {
       addToCartSimple(dish);
     }
-  };
+  } catch (err) {
+    console.log(err);
+    addToCartSimple(dish);
+  }
+};
 
   const openComboCustomizer = async (dish) => {
     console.log("Inside Combo");
