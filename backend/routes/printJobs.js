@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getPool, sql } = require('../config/db');
+const { poolPromise, sql } = require('../config/db');
 
 // Middleware to authenticate the print bridge requests
 const authenticateBridge = async (req, res, next) => {
@@ -47,7 +47,7 @@ router.get('/bridge-status', (req, res) => {
 router.get('/pending', authenticateBridge, async (req, res) => {
   lastBridgeActivity = Date.now();
   lastBridgeIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const pool = getPool();
+  const pool = await poolPromise;
   const transaction = new sql.Transaction(pool);
 
   try {
@@ -91,7 +91,7 @@ router.get('/pending', authenticateBridge, async (req, res) => {
 router.post('/:jobId/complete', authenticateBridge, async (req, res) => {
   try {
     const { jobId } = req.params;
-    const pool = getPool();
+    const pool = await poolPromise;
     
     await pool.request()
       .input('JobId', sql.UniqueIdentifier, jobId)
@@ -113,7 +113,7 @@ router.post('/:jobId/failed', authenticateBridge, async (req, res) => {
   try {
     const { jobId } = req.params;
     const { errorMessage } = req.body;
-    const pool = getPool();
+    const pool = await poolPromise;
 
     await pool.request()
       .input('JobId', sql.UniqueIdentifier, jobId)
@@ -140,7 +140,7 @@ router.post('/', authenticateBridge, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing required fields: printerType and content' });
     }
 
-    const pool = getPool();
+    const pool = await poolPromise;
 
     // Resolve Printer IP and Name from PrintMaster
     let printerIp = '';
@@ -219,7 +219,7 @@ router.post('/', authenticateBridge, async (req, res) => {
 router.get('/status/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
-    const pool = getPool();
+    const pool = await poolPromise;
     const result = await pool.request()
       .input('JobId', sql.UniqueIdentifier, jobId)
       .query(`
