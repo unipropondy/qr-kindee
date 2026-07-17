@@ -321,20 +321,20 @@ function generateKOTHTML(data, type) {
 <head>
   <style>
     @page { size: 80mm auto; margin: 0; }
-    body { font-family: Arial, sans-serif; width: 80mm; padding: 0; margin: 0; color: #000; background: #fff; }
+    body { font-family: 'Arial', sans-serif; width: 80mm; padding: 0; margin: 0; color: #000; background: #fff; }
     .kot-container { padding: 1mm 2mm; width: 76mm; }
-    .header-box { background: #000 !important; color: #fff !important; padding: 3px 8px; font-weight: bold; font-size: 24px; display: inline-block; margin-bottom: 2px; text-transform: uppercase; -webkit-print-color-adjust: exact; }
+    .header-box { background: #000 !important; color: #fff !important; padding: 3px 8px; text-align: left; font-weight: bold; font-size: 24px; display: inline-block; margin-bottom: 2px; text-transform: uppercase; -webkit-print-color-adjust: exact; }
     .timestamp { font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #333; }
     .table-info { display: flex; justify-content: space-between; border-bottom: 2px dashed #000; padding: 3px 0; margin-bottom: 6px; font-size: 26px; font-weight: bold; }
     .headers { display: flex; border-bottom: 1.5px dashed #000; padding: 3px 0; font-size: 16px; font-weight: bold; text-transform: uppercase; }
     .qty-head { width: 50px; margin-right: 8px; }
     .item-row { border-bottom: 1.5px solid #000; padding: 8px 0; }
     .item-main { display: flex; align-items: flex-start; }
-    .item-qty { font-size: 20px; font-weight: 600; width: 50px; line-height: 1; margin-right: 8px; }
-    .item-name { font-size: 16px; font-weight: 600; flex: 1; line-height: 1.1; }
+    .item-qty { font-size: 24px; font-weight: 900; width: 50px; line-height: 1; margin-right: 8px; }
+    .item-name { font-size: 22px; font-weight: 900; flex: 1; line-height: 1.1; }
     .modifier-list { margin-left: 58px; margin-top: 3px; }
-    .modifier-item { font-size: 18px; font-weight: bold; display: block; }
-    .remarks { margin-left: 58px; font-size: 16px; font-weight: bold; font-style: italic; margin-top: 4px; }
+    .modifier-item { font-size: 22px; font-weight: 700; color: #000; display: block; }
+    .remarks { margin-left: 58px; font-size: 15px; font-weight: 700; font-style: italic; margin-top: 4px; }
     .footer { margin-top: 10px; font-size: 14px; font-weight: bold; font-family: monospace; }
     .kitchen-name { text-align: center; font-size: 24px; font-weight: bold; margin-top: 16px; text-transform: uppercase; border: 2px solid #000; padding: 6px; }
     @media print { body { width: 80mm; } .header-box { -webkit-print-color-adjust: exact; } }

@@ -257,7 +257,8 @@ async function generateAndQueueKOTs(orderId) {
           d.ComboDetailsJSON,
           ISNULL(ckt.KitchenTypeName, cat.CategoryName) as KitchenTypeName,
           pm.PrinterName,
-          pm.PrinterPath as PrinterIP
+          pm.PrinterPath as PrinterIP,
+          pm.IsEnabled as IsPrinterEnabled
         FROM RestaurantOrderDetailCur d 
         JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId 
         LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
@@ -278,6 +279,10 @@ async function generateAndQueueKOTs(orderId) {
     // 3. Group Items by Printer Name (to keep KOT slips separated by kitchen type)
     const printerGroups = {};
     items.forEach(item => {
+        if (item.IsPrinterEnabled === 0 || item.IsPrinterEnabled === false) {
+            console.log(`[generateAndQueueKOTs] Skipping item ${item.name} because kitchen printer is disabled.`);
+            return;
+        }
         const pName = item.PrinterName || 'Kitchen Printer';
         const ip = item.PrinterIP || '192.168.0.22'; 
         
