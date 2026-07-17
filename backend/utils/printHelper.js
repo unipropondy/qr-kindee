@@ -258,7 +258,7 @@ async function generateAndQueueKOTs(orderId) {
           ISNULL(ckt.KitchenTypeName, cat.CategoryName) as KitchenTypeName,
           pm.PrinterName,
           pm.PrinterPath as PrinterIP,
-          ckt.KitchenTypeCode as KitchenTypeValue
+          pm.IsEnabled as IsPrinterEnabled
         FROM RestaurantOrderDetailCur d 
         JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId 
         LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
@@ -276,24 +276,11 @@ async function generateAndQueueKOTs(orderId) {
         return;
     }
 
-    // Fetch AppSettings toggles
-    const appSettingsRes = await pool.request().query("SELECT TOP 1 EnableBeveragePrinter, EnableMainMenuPrinter, EnableThaiPrinter FROM AppSettings");
-    const asRow = appSettingsRes.recordset[0] || {};
-    const enableBev = asRow.EnableBeveragePrinter !== false && asRow.EnableBeveragePrinter !== 0;
-    const enableMain = asRow.EnableMainMenuPrinter !== false && asRow.EnableMainMenuPrinter !== 0;
-    const enableThai = asRow.EnableThaiPrinter !== false && asRow.EnableThaiPrinter !== 0;
-
     // 3. Group Items by Printer Name (to keep KOT slips separated by kitchen type)
     const printerGroups = {};
     items.forEach(item => {
-        const codeVal = parseInt(item.KitchenTypeValue);
-        let isPrinterEnabled = true;
-        if (codeVal === 5) isPrinterEnabled = enableBev;
-        else if (codeVal === 2) isPrinterEnabled = enableMain;
-        else if (codeVal === 11) isPrinterEnabled = enableThai;
-
-        if (!isPrinterEnabled) {
-            console.log(`[generateAndQueueKOTs] Skipping item ${item.name} because kitchen printer is disabled in AppSettings.`);
+        if (item.IsPrinterEnabled === 0 || item.IsPrinterEnabled === false) {
+            console.log(`[generateAndQueueKOTs] Skipping item ${item.name} because kitchen printer is disabled.`);
             return;
         }
         const pName = item.PrinterName || 'Kitchen Printer';
