@@ -184,7 +184,7 @@ function generateKOTHTML(data, type) {
       ? "REPRINT"
       : type === "ADDITIONAL"
       ? "ADDITIONAL"
-      : "NEW ORDER";
+      : (data.kitchenName || data.kitchenTypeName || data.KitchenTypeName || "NEW ORDER");
   title = title.replace(/\s*KOT\s*/gi, "").trim();
 
   const items = data.items || [];
@@ -369,7 +369,7 @@ function formatKOTThermalText(data, type) {
       ? "REPRINT"
       : type === "ADDITIONAL"
       ? "ADDITIONAL"
-      : "NEW ORDER";
+      : (data.kitchenName || data.kitchenTypeName || data.KitchenTypeName || "NEW ORDER");
   const items = data.items || [];
   const tableNo = data.tableNo || "N/A";
   const waiter = data.waiterName || "Staff";
