@@ -344,6 +344,60 @@ async function generateAndQueueKOTs(orderId) {
         }
     }
 
+    // 5. Generate KDS backup print (PrinterType = 4) containing all items
+    try {
+        const kdsPrinterRes = await pool.request()
+            .query(`
+                SELECT TOP 1 PrinterPath as PrinterIP, PrinterName 
+                FROM PrintMaster 
+                WHERE PrinterType = 4 AND IsActive = 1 AND PrinterPath IS NOT NULL AND PrinterPath <> ''
+            `);
+        
+        if (kdsPrinterRes.recordset.length > 0) {
+            const kdsPrinter = kdsPrinterRes.recordset[0];
+            const kdsIp = kdsPrinter.PrinterIP;
+
+            const orderData = {
+                orderId: orderHeader.OrderId,
+                orderNo: orderHeader.OrderNumber,
+                tableNo: orderHeader.tableNo,
+                waiterName: "QR POS"
+            };
+
+            const kdsThermalText = formatKOTThermalText(orderData, items); 
+            const storeId = "STORE_001";
+
+            const kdsDupCheck = await pool.request()
+                .input('PrinterIp', sql.NVarChar(100), kdsIp)
+                .input('SearchText', sql.NVarChar(100), `%Order #: ${orderHeader.OrderNumber}%`)
+                .query(`
+                    SELECT TOP 1 JobId 
+                    FROM PrintJobQueue 
+                    WHERE PrinterIp = @PrinterIp 
+                      AND Status IN ('PENDING', 'PROCESSING') 
+                      AND Content LIKE @SearchText
+                `);
+
+            if (kdsDupCheck.recordset.length === 0) {
+                const kdsJobId = crypto.randomUUID();
+                await pool.request()
+                    .input('JobId', sql.UniqueIdentifier, kdsJobId)
+                    .input('StoreId', sql.NVarChar(50), storeId)
+                    .input('PrinterName', sql.NVarChar(100), kdsPrinter.PrinterName)
+                    .input('PrinterIp', sql.NVarChar(100), kdsIp)
+                    .input('PrinterPort', sql.Int, 9100)
+                    .input('Content', sql.NVarChar(sql.MAX), kdsThermalText)
+                    .query(`
+                        INSERT INTO PrintJobQueue (JobId, StoreId, PrinterName, PrinterIp, PrinterPort, Content, Status, CreatedOn, Attempts)
+                        VALUES (@JobId, @StoreId, @PrinterName, @PrinterIp, @PrinterPort, @Content, 'PENDING', GETDATE(), 0)
+                    `);
+                console.log(`[generateAndQueueKOTs] Queued KDS job ${kdsJobId} for IP ${kdsIp}`);
+            }
+        }
+    } catch (kdsErr) {
+        console.error("[generateAndQueueKOTs] KDS backup print queue error:", kdsErr.message);
+    }
+
   } catch (err) {
       console.error("\n================ KOT QUEUE FATAL ERROR ================");
       console.error(`OrderId: ${orderId}`);
