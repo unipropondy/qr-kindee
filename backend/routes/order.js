@@ -210,13 +210,11 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
       const matchCheck = await transaction.request()
         .input("orderId", sql.UniqueIdentifier, orderGuid)
         .input("dishId", sql.UniqueIdentifier, finalProdId)
-        .input("mods", sql.NVarChar(sql.MAX), modsJSON)
         .query(`
       SELECT TOP 1 OrderDetailId
       FROM RestaurantOrderDetailCur
       WHERE OrderId = @orderId
         AND DishId = @dishId
-        AND CAST(ModifiersJSON AS NVARCHAR(MAX)) = LTRIM(RTRIM(@mods))
         AND StatusCode <> 0
       ORDER BY CreatedOn DESC
     `);
