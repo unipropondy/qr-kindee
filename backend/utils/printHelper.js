@@ -175,11 +175,13 @@ function formatKOTThermalText(data, itemsForPrinter) {
     const comboSels = item.comboSelections || (item.ComboDetailsJSON ? (() => { try { return JSON.parse(item.ComboDetailsJSON); } catch { return []; } })() : []);
     if (comboSels && comboSels.length > 0) {
       comboSels.forEach((g) => {
-        t += `[L]    ${g.groupName || g.GroupName}:\n`;
         const comboItems = g.items || g.Items || [];
-        comboItems.forEach((opt) => {
-          t += `[L]      ↳ ${opt.name || opt.Name}\n`;
-        });
+        if (comboItems.length > 0) {
+          t += `[L]    ${g.groupName || g.GroupName}:\n`;
+          comboItems.forEach((opt) => {
+            t += `[L]      ↳ ${opt.name || opt.Name}\n`;
+          });
+        }
       });
     }
 
