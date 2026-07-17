@@ -288,7 +288,7 @@ async function generateAndQueueKOTs(orderId) {
         LEFT JOIN CategoryKitchenType ckt ON dgm.CategoryId = ckt.CategoryId
         LEFT JOIN PrintMaster pm ON CAST(ckt.KitchenTypeCode AS VARCHAR(50)) = CAST(pm.KitchenTypeValue AS VARCHAR(50)) AND pm.PrinterType = 2
         WHERE h.OrderNumber = @orderNo
-        AND d.StatusCode NOT IN (0)
+        AND d.StatusCode = 1
       `);
 
     const items = itemsRes.recordset;

@@ -1266,6 +1266,14 @@ router.post("/mark-sent", async (req, res) => {
     console.log("Enablekotqr =", enableKotQr);
     console.log("Final Status =", finalStatusCode);
 
+    if (enableKotQr === 1) {
+      try {
+        await generateAndQueueKOTs(orderId);
+      } catch (err) {
+        console.error("Failed to queue KOT for mark-sent:", err);
+      }
+    }
+
     const result = await pool.request()
       .input("orderNo", sql.NVarChar(50), orderId)
       .input("statusCode", sql.Int, finalStatusCode)
@@ -1280,14 +1288,6 @@ router.post("/mark-sent", async (req, res) => {
       `);
 
     console.log("Rows Updated:", result.rowsAffected);
-
-    if (enableKotQr === 1) {
-      try {
-        await generateAndQueueKOTs(orderId);
-      } catch (err) {
-        console.error("Failed to queue KOT for mark-sent:", err);
-      }
-    }
 
     if (enableKotQr === 1 && req.io) {
       req.io.emit("qr-print-request", {
