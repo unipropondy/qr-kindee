@@ -1822,7 +1822,7 @@ function App() {
                                     PICK {group.minSelection === group.maxSelection ? group.minSelection : `${group.minSelection}-${group.maxSelection}`}
                                   </span>
                                 </div>
-                                <div className="options-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                                <div className="options-grid">
                                   {(group.options || []).map((option) => {
                                     const isSelected = selectedIds.includes(option.dishId);
                                     return (
@@ -1835,7 +1835,6 @@ function App() {
                                           background: isSelected ? '#fff5eb' : 'white',
                                           borderRadius: '12px',
                                           padding: '10px',
-                                          width: 'calc(33% - 10px)',
                                           boxSizing: 'border-box',
                                           cursor: 'pointer',
                                           textAlign: 'center',
