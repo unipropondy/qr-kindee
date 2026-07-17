@@ -121,8 +121,15 @@ function formatThermalTextWithDiscount(saleData, company, discountInfo) {
   return text;
 }
 
-function formatKOTThermalText(data, itemsForPrinter) {
-  const title = "NEW ORDER";
+function formatKOTThermalText(data, itemsForPrinter, type) {
+  const title =
+    type === "KDS_PRINT"
+      ? "KDS PRINT"
+      : type === "REPRINT"
+        ? "REPRINT"
+        : type === "ADDITIONAL"
+          ? "ADDITIONAL"
+          : "NEW ORDER";
   const tableNo = data.tableNo || "N/A";
   const waiter = data.waiterName || "Staff";
   const orderNo = data.orderNo || data.orderId || "";
@@ -152,7 +159,15 @@ function formatKOTThermalText(data, itemsForPrinter) {
   const renderThermalItem = (item) => {
     const qtyNum = item.quantity || item.qty || item.Quantity || 1;
     const itemName = item.name || item.Name || item.DishName || item.ProductName || "";
-    let t = `[L]<font size='big'>[${qtyNum}] ${itemName}</font>\n`;
+    const lines = itemName.split("\n");
+    let t = "";
+    lines.forEach((line, idx) => {
+      if (idx === 0) {
+        t += `[L]<font size='big'>[${qtyNum}] ${line}</font>\n`;
+      } else {
+        t += `[L]<font size='big'>    ${line}</font>\n`;
+      }
+    });
 
     const songName = item.songName || item.SongName || "";
     if (songName) t += `[L]    🎵 ${songName}\n`;
@@ -163,7 +178,7 @@ function formatKOTThermalText(data, itemsForPrinter) {
       item.isTakeAway ||
       item.IsTakeAway
     );
-    if (isTw) t += `[L]    - Takeaway\n`;
+    if (isTw) t += `[L]    <B>- Takeaway</B>\n`;
 
     const modifiers = item.modifiers || (item.ModifiersJSON ? JSON.parse(item.ModifiersJSON) : []);
     if (modifiers && modifiers.length > 0) {
@@ -177,9 +192,8 @@ function formatKOTThermalText(data, itemsForPrinter) {
       comboSels.forEach((g) => {
         const comboItems = g.items || g.Items || [];
         if (comboItems.length > 0) {
-          t += `[L]    ${g.groupName || g.GroupName}:\n`;
           comboItems.forEach((opt) => {
-            t += `[L]      ↳ ${opt.name || opt.Name}\n`;
+            t += `[L]<font size='big'>    - ${opt.name || opt.Name}</font>\n`;
           });
         }
       });
@@ -191,26 +205,33 @@ function formatKOTThermalText(data, itemsForPrinter) {
     return t;
   };
 
-  const kitchenGroups = {};
-  itemsForPrinter.forEach((item) => {
-    const kName = (
-      item.PrinterName ||
-      item.KitchenTypeName ||
-      item.kitchenTypeName ||
-      item.dishGroupName ||
-      item.categoryName ||
-      "KITCHEN"
-    )
-      .toUpperCase()
-      .trim();
-    if (!kitchenGroups[kName]) kitchenGroups[kName] = [];
-    kitchenGroups[kName].push(item);
-  });
+  if (type === "KDS_PRINT") {
+    const kitchenGroups = {};
+    itemsForPrinter.forEach((item) => {
+      const kName = (
+        item.PrinterName ||
+        item.KitchenTypeName ||
+        item.kitchenTypeName ||
+        item.dishGroupName ||
+        item.categoryName ||
+        "KITCHEN"
+      )
+        .toUpperCase()
+        .trim();
+      if (!kitchenGroups[kName]) kitchenGroups[kName] = [];
+      kitchenGroups[kName].push(item);
+    });
 
-  for (const [kName, groupItems] of Object.entries(kitchenGroups)) {
-    text += `\n[L]<B>${kName}</B>\n`;
-    text += "[L]--------------------------------\n";
-    groupItems.forEach((item) => {
+    for (const [kName, groupItems] of Object.entries(kitchenGroups)) {
+      text += `\n[L]<B>${kName}</B>\n`;
+      text += "[L]--------------------------------\n";
+      groupItems.forEach((item) => {
+        text += renderThermalItem(item);
+      });
+      text += "[L]--------------------------------\n";
+    }
+  } else {
+    itemsForPrinter.forEach((item) => {
       text += renderThermalItem(item);
     });
     text += "[L]--------------------------------\n";
@@ -303,10 +324,11 @@ async function generateAndQueueKOTs(orderId) {
                 orderId: orderHeader.OrderId,
                 orderNo: orderHeader.OrderNumber,
                 tableNo: orderHeader.tableNo,
-                waiterName: "QR POS" // Since it's from QR
+                waiterName: "QR POS", // Since it's from QR
+                kitchenName: group.printerName
             };
 
-            const thermalText = formatKOTThermalText(orderData, group.items);
+            const thermalText = formatKOTThermalText(orderData, group.items, "NEW_ORDER");
             const ip = group.printerIp;
             const storeId = "STORE_001"; // Consistent with UniversalPrinter.js
 
@@ -369,10 +391,11 @@ async function generateAndQueueKOTs(orderId) {
                 orderId: orderHeader.OrderId,
                 orderNo: orderHeader.OrderNumber,
                 tableNo: orderHeader.tableNo,
-                waiterName: "QR POS"
+                waiterName: "QR POS",
+                kitchenName: "KDS"
             };
 
-            const kdsThermalText = formatKOTThermalText(orderData, items); 
+            const kdsThermalText = formatKOTThermalText(orderData, items, "KDS_PRINT"); 
             const storeId = "STORE_001";
 
             const kdsDupCheck = await pool.request()
