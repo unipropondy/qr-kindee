@@ -273,24 +273,24 @@ async function generateAndQueueKOTs(orderId) {
         return;
     }
 
-    // 3. Group Items by Printer IP
+    // 3. Group Items by Printer Name (to keep KOT slips separated by kitchen type)
     const printerGroups = {};
     items.forEach(item => {
-        // Fallback to a default IP if not resolved
-        const ip = item.PrinterIP || '192.168.0.22'; 
         const pName = item.PrinterName || 'Kitchen Printer';
+        const ip = item.PrinterIP || '192.168.0.22'; 
         
-        if (!printerGroups[ip]) {
-            printerGroups[ip] = {
+        if (!printerGroups[pName]) {
+            printerGroups[pName] = {
                 printerName: pName,
+                printerIp: ip,
                 items: []
             };
         }
-        printerGroups[ip].items.push(item);
+        printerGroups[pName].items.push(item);
     });
 
     // 4. Generate Thermal Content & Insert into PrintJobQueue
-    for (const [ip, group] of Object.entries(printerGroups)) {
+    for (const [pName, group] of Object.entries(printerGroups)) {
         try {
             const orderData = {
                 orderId: orderHeader.OrderId,
@@ -300,6 +300,7 @@ async function generateAndQueueKOTs(orderId) {
             };
 
             const thermalText = formatKOTThermalText(orderData, group.items);
+            const ip = group.printerIp;
             const storeId = "STORE_001"; // Consistent with UniversalPrinter.js
 
             // Duplicate Check: See if a PENDING/PROCESSING job already exists for this PrinterName and Order No
