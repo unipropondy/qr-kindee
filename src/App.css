@@ -906,7 +906,7 @@ body {
 
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 10px;
 }
 
@@ -915,10 +915,5 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-@media (max-width: 480px) {
-  .options-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  min-height: 70px;
 }
