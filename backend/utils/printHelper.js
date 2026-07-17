@@ -183,7 +183,7 @@ function formatKOTThermalText(data, itemsForPrinter, type) {
     const modifiers = item.modifiers || (item.ModifiersJSON ? JSON.parse(item.ModifiersJSON) : []);
     if (modifiers && modifiers.length > 0) {
       modifiers.forEach((m) => {
-        t += `[L]<font size='big'>    + ${m.ModifierName || m.name}</font>\n`;
+        t += `[L]    <B>+ ${m.ModifierName || m.name}</B>\n`;
       });
     }
 
