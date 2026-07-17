@@ -874,10 +874,16 @@ function App() {
 
           price: item.Price || item.price || 0,
 
-          modifiers: (item.selectedMods || []).filter(
-            (m) =>
-              /^[0-9a-fA-F-]{36}$/.test(m.ModifierID)
-          ),
+          modifiers: (item.selectedMods || [])
+            .filter((m) =>
+              /^[0-9a-fA-F-]{36}$/.test(m.ModifierID || m.ModifierId)
+            )
+            .map((m) => ({
+              ModifierId: m.ModifierID || m.ModifierId,
+              ModifierName: m.ModifierName,
+              Price: m.Price || 0,
+              qty: 1,
+            })),
 
           comboSelections: item.comboSelections || [],
           lineItemId: item.lineItemId || item.OrderDetailId || null,
@@ -988,10 +994,10 @@ function App() {
 
           modifiers: (item.selectedMods || [])
             .filter((m) =>
-              /^[0-9a-fA-F-]{36}$/.test(m.ModifierID)
+              /^[0-9a-fA-F-]{36}$/.test(m.ModifierID || m.ModifierId)
             )
             .map((m) => ({
-              ModifierId: m.ModifierID,
+              ModifierId: m.ModifierID || m.ModifierId,
               ModifierName: m.ModifierName,
               Price: m.Price || 0,
               qty: 1,
@@ -1143,30 +1149,25 @@ function App() {
 
     setCart((prev) => {
 
-      // same dish + same modifiers
+      // same dish + same modifiers (and not sent yet)
       const existing = prev.find((item) => {
+        const itemDishId = item.DishId || item.id;
+        const selectedDishId = selectedDish.DishId || selectedDish.id;
 
-        const oldMods = JSON.stringify(
-          [...(item.selectedMods || [])]
-            .map((m) => m.ModifierID)
-            .sort()
-        );
+        const itemModKey = (item.selectedMods || [])
+          .map((m) => m.ModifierID || m.ModifierId)
+          .sort()
+          .join("-");
 
-        const newMods = JSON.stringify(
-          [...selectedMods]
-            .map((m) => m.ModifierID)
-            .sort()
-        );
-
-
+        const selectedModKey = selectedMods
+          .map((m) => m.ModifierID || m.ModifierId)
+          .sort()
+          .join("-");
 
         return (
-          item.DishId === selectedDish.DishId &&
-          (item.modifierKey || "") ===
-          selectedMods
-            .map((m) => m.ModifierID)
-            .sort()
-            .join("-")
+          itemDishId === selectedDishId &&
+          item.status !== "SENT" &&
+          itemModKey === selectedModKey
         );
       });
 
@@ -1183,6 +1184,11 @@ function App() {
         );
       }
 
+      const modKey = selectedMods
+        .map((m) => m.ModifierID || m.ModifierId)
+        .sort()
+        .join("-");
+
       // new cart item
       return [
         ...prev,
@@ -1197,10 +1203,7 @@ function App() {
 
           finalPrice,
 
-          modifierKey: selectedMods
-            .map((m) => m.ModifierID)
-            .sort()
-            .join("-"),
+          modifierKey: modKey,
 
           status: "NEW",
         },

@@ -717,7 +717,7 @@ JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId
 LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
 WHERE
   h.isOrderClosed = 0
-  AND d.StatusCode = 1
+  AND d.StatusCode <> 0
   AND (
     h.OrderNumber = @orderNo
     OR h.OrderId = (
