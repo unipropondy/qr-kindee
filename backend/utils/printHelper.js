@@ -302,20 +302,20 @@ async function generateAndQueueKOTs(orderId) {
             const thermalText = formatKOTThermalText(orderData, group.items);
             const storeId = "STORE_001"; // Consistent with UniversalPrinter.js
 
-            // Duplicate Check: See if a PENDING/PROCESSING job already exists for this IP and Order No
+            // Duplicate Check: See if a PENDING/PROCESSING job already exists for this PrinterName and Order No
             const dupCheck = await pool.request()
-                .input('PrinterIp', sql.NVarChar(100), ip)
+                .input('PrinterName', sql.NVarChar(100), group.printerName)
                 .input('SearchText', sql.NVarChar(100), `%Order #: ${orderHeader.OrderNumber}%`)
                 .query(`
                     SELECT TOP 1 JobId 
                     FROM PrintJobQueue 
-                    WHERE PrinterIp = @PrinterIp 
+                    WHERE PrinterName = @PrinterName
                       AND Status IN ('PENDING', 'PROCESSING') 
                       AND Content LIKE @SearchText
                 `);
 
             if (dupCheck.recordset.length > 0) {
-                console.log(`[generateAndQueueKOTs] Skip: Duplicate job found for Order ${orderHeader.OrderNumber}, IP ${ip} (JobId: ${dupCheck.recordset[0].JobId})`);
+                console.log(`[generateAndQueueKOTs] Skip: Duplicate job found for Order ${orderHeader.OrderNumber}, Printer ${group.printerName} (JobId: ${dupCheck.recordset[0].JobId})`);
                 continue;
             }
 
@@ -368,12 +368,12 @@ async function generateAndQueueKOTs(orderId) {
             const storeId = "STORE_001";
 
             const kdsDupCheck = await pool.request()
-                .input('PrinterIp', sql.NVarChar(100), kdsIp)
+                .input('PrinterName', sql.NVarChar(100), kdsPrinter.PrinterName)
                 .input('SearchText', sql.NVarChar(100), `%Order #: ${orderHeader.OrderNumber}%`)
                 .query(`
                     SELECT TOP 1 JobId 
                     FROM PrintJobQueue 
-                    WHERE PrinterIp = @PrinterIp 
+                    WHERE PrinterName = @PrinterName 
                       AND Status IN ('PENDING', 'PROCESSING') 
                       AND Content LIKE @SearchText
                 `);
