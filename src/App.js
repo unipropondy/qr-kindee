@@ -253,37 +253,37 @@ function App() {
   // };
 
   const openModifiers = async (dish) => {
-  // Combo
-  if (Number(enableCombo) === 1 && Number(dish.IsCombo) === 1) {
-    openComboCustomizer(dish);
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/modifiers/${dish.DishId}`);
-
-    if (!res.ok) {
-      addToCartSimple(dish);
+    // Combo
+    if (Number(enableCombo) === 1 && Number(dish.IsCombo) === 1) {
+      openComboCustomizer(dish);
       return;
     }
 
-    const mods = await res.json();
-    console.log("Modifiers:", mods);
+    try {
+      const res = await fetch(`${API}/modifiers/${dish.DishId}`);
 
-    if (Array.isArray(mods) && mods.length > 0) {
-      setSelectedDish(dish);
-      setModifiers(mods);
-      setSelectedModifierIds([]);
-      setCustomMods([]);
-      setShowModifier(true);
-    } else {
+      if (!res.ok) {
+        addToCartSimple(dish);
+        return;
+      }
+
+      const mods = await res.json();
+      console.log("Modifiers:", mods);
+
+      if (Array.isArray(mods) && mods.length > 0) {
+        setSelectedDish(dish);
+        setModifiers(mods);
+        setSelectedModifierIds([]);
+        setCustomMods([]);
+        setShowModifier(true);
+      } else {
+        addToCartSimple(dish);
+      }
+    } catch (err) {
+      console.log(err);
       addToCartSimple(dish);
     }
-  } catch (err) {
-    console.log(err);
-    addToCartSimple(dish);
-  }
-};
+  };
 
   const openComboCustomizer = async (dish) => {
     console.log("Inside Combo");
@@ -598,6 +598,9 @@ function App() {
       actionRef.current = "DELETE";
 
       // Optimistic UI update: reliably remove by exact index
+      if (cart.length === 1) {
+        setCurrentOrderId(null);
+      }
       setCart((prev) => {
         const newCart = [...prev];
         newCart.splice(index, 1);
@@ -641,10 +644,6 @@ function App() {
         console.log("DELETE ITEM ERROR:", err);
       } finally {
         deleteInProgressRef.current = false;
-        // Reload cart from DB to confirm final state
-        if (tableId) {
-          await loadCart(tableId);
-        }
       }
 
       return;
@@ -915,11 +914,45 @@ function App() {
 
       if (tableId && !deleteInProgressRef.current) {
         if (actionRef.current === "UPDATE") {
-          // User requested refresh the GET option for plus and minus buttons
+          // Selectively sync qty + lineItemId from backend WITHOUT overwriting
+          // selectedMods, finalPrice, or other local state (fixes modifier reset bug)
           try {
-            // Wait briefly for DB transaction to commit
             await new Promise(r => setTimeout(r, 600));
-            await loadCart(tableId);
+            const cartRes = await fetch(`${API}/order/cart/${tableId}`);
+            const cartData = await cartRes.json();
+
+            if (cartData && cartData.items) {
+              setCart(prev => {
+                let changed = false;
+                const updatedCart = prev.map(item => {
+                  const match = cartData.items.find(b =>
+                    (b.OrderDetailId || b.lineItemId) &&
+                    (b.OrderDetailId || b.lineItemId) === (item.OrderDetailId || item.lineItemId)
+                  );
+                  if (match) {
+                    const newQty = match.qty || match.Quantity || item.qty;
+                    if (
+                      newQty !== item.qty ||
+                      match.OrderDetailId !== item.OrderDetailId
+                    ) {
+                      changed = true;
+                      return {
+                        ...item,
+                        qty: newQty,
+                        OrderDetailId: match.OrderDetailId || item.OrderDetailId,
+                        lineItemId: match.OrderDetailId || match.lineItemId || item.lineItemId,
+                      };
+                    }
+                  }
+                  return item;
+                });
+                if (changed) {
+                  skipSaveRef.current = true;
+                  return updatedCart;
+                }
+                return prev;
+              });
+            }
           } catch (syncErr) {
             console.log("Refresh GET error:", syncErr);
           }
@@ -1087,7 +1120,7 @@ function App() {
         setCart(formatted);
       }
 
-      if (data.currentOrderId) {
+      if (data.currentOrderId !== undefined) {
         setCurrentOrderId(data.currentOrderId);
       }
 
@@ -2101,11 +2134,10 @@ function App() {
                     <div className="payment-card">
 
                       <div className="card-top-section card-2-top">
-                        <div className="brand-grid full-grid">
-                          <CashBrand />
+                        <div className="brand-grid-two">
                           <VoucherBrand />
                           <MastercardBrand />
-                          <NetsBrand />
+
                           <PayNowBrand />
                           <VisaBrand />
                         </div>
@@ -2143,7 +2175,7 @@ function App() {
 
                         }}
                       >
-                        Pay At Cashier Now
+                        Pay at Counter
                       </button>
 
                     </div>

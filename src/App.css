@@ -41,6 +41,7 @@ body {
   overflow-x: auto;
   scrollbar-width: none;
 }
+
 .pos-header::-webkit-scrollbar {
   display: none;
 }
@@ -78,7 +79,7 @@ body {
   outline: none;
 }
 
-.status-btn{
+.status-btn {
   background: #fe7a38;
   color: white;
   border: none;
@@ -177,9 +178,20 @@ body {
 }
 
 @keyframes blink-effect {
-  0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
-  50% { transform: scale(1.05); box-shadow: 0 0 8px rgba(245,127,31,0.6); }
-  100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 8px rgba(245, 127, 31, 0.6);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
 }
 
 .blink-anim {
@@ -916,4 +928,13 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 70px;
+}
+
+.brand-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 30px;
+  justify-items: center;
+  align-items: center;
+  width: 100%;
 }
