@@ -20,6 +20,7 @@ function App() {
   const deleteInProgressRef = useRef(false);
   const actionRef = useRef(""); // "INSERT", "UPDATE", "DELETE"
   const pendingSaveRef = useRef(null); // tracks in-flight saveCartToBackend promise
+  const currentOrderIdRef = useRef(null); // always holds the latest orderId synchronously
   const isLoggedIn = localStorage.getItem("isLoggedIn");
 
   const API = `${BASE_URL}/api`;
@@ -645,6 +646,7 @@ function App() {
       // Optimistic UI update: reliably remove by exact index
       if (cart.length === 1) {
         setCurrentOrderId(null);
+        currentOrderIdRef.current = null;
       }
       setCart((prev) => {
         const newCart = [...prev];
@@ -955,6 +957,7 @@ function App() {
 
       if (data.orderId) {
         setCurrentOrderId(data.orderId);
+        currentOrderIdRef.current = data.orderId;
       }
 
       if (tableId && !deleteInProgressRef.current) {
@@ -1106,7 +1109,10 @@ function App() {
       console.log("ORDER SEND:", data);
 
       if (data.success) {
-        if (data.orderId) { setCurrentOrderId(data.orderId); }
+        if (data.orderId) {
+          setCurrentOrderId(data.orderId);
+          currentOrderIdRef.current = data.orderId;
+        }
 
         const totalAmount =
           cart.reduce((s, i) => s + (Number(i.Price || i.price || 0) * Number(i.qty || 1)), 0).toFixed(2);
@@ -1183,6 +1189,7 @@ function App() {
 
       if (data.currentOrderId !== undefined) {
         setCurrentOrderId(data.currentOrderId);
+        currentOrderIdRef.current = data.currentOrderId;
       }
 
     } catch (err) {
@@ -2234,7 +2241,7 @@ function App() {
                           setShowPaymentPopup(false);
 
                           window.location.href =
-                            `/settlement-success?tableId=${tableId}&table=${tableNo}&orderId=${currentOrderId}`;
+                            `/settlement-success?tableId=${tableId}&table=${tableNo}&orderId=${currentOrderIdRef.current || currentOrderId}`;
 
                         }}
                       >
