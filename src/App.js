@@ -18,6 +18,7 @@ function App() {
   const skipSaveRef = useRef(false);
   const deleteInProgressRef = useRef(false);
   const actionRef = useRef(""); // "INSERT", "UPDATE", "DELETE"
+  const pendingSaveRef = useRef(null); // tracks in-flight saveCartToBackend promise
   const isLoggedIn = localStorage.getItem("isLoggedIn");
 
   const API = `${BASE_URL}/api`;
@@ -173,7 +174,14 @@ function App() {
       return;
     }
 
-    saveCartToBackend();
+    // Track the in-flight save so Refresh can wait for it
+    const savePromise = saveCartToBackend();
+    pendingSaveRef.current = savePromise;
+    savePromise.finally(() => {
+      if (pendingSaveRef.current === savePromise) {
+        pendingSaveRef.current = null;
+      }
+    });
 
   }, [cart, paymentDone]);
 
@@ -1094,7 +1102,7 @@ function App() {
 
       if (data.items) {
 
-        const formatted = data.items.map((item) => ({
+        const fromDB = data.items.map((item) => ({
 
           ...item,
 
@@ -1116,8 +1124,24 @@ function App() {
               : []),
         }));
 
+        // Merge: keep any locally-added items that haven't been persisted yet
+        // (no OrderDetailId/lineItemId means they haven't reached the DB)
         skipSaveRef.current = true;
-        setCart(formatted);
+        setCart(prev => {
+          const dbIds = new Set(
+            fromDB
+              .map(i => i.OrderDetailId || i.lineItemId)
+              .filter(Boolean)
+          );
+          // Local items not yet in DB (no server ID)
+          const localOnly = prev.filter(
+            item =>
+              !item.OrderDetailId &&
+              !item.lineItemId &&
+              item.status === "NEW"
+          );
+          return [...fromDB, ...localOnly];
+        });
       }
 
       if (data.currentOrderId !== undefined) {
@@ -1623,7 +1647,15 @@ function App() {
                       </span>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <button
-                          onClick={() => tableId && loadCart(tableId)}
+                          onClick={async () => {
+                            if (!tableId) return;
+                            // Wait for any in-flight save to finish first,
+                            // so newly-added items are persisted before we reload from DB
+                            if (pendingSaveRef.current) {
+                              try { await pendingSaveRef.current; } catch (_) {}
+                            }
+                            await loadCart(tableId);
+                          }}
                           style={{ background: 'none', border: '1px solid #ddd', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                           title="Refresh Cart"
                           disabled={isCartLoading}
