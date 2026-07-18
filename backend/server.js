@@ -49,8 +49,28 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
+// Expose io on app so routes can use app.get("io") for room-targeted emissions
+app.set("io", io);
+
 io.on("connection", (socket) => {
   console.log("🔌 New Socket.IO Client Connected:", socket.id);
+
+  // Client sends { tableId } to subscribe to a table-specific room
+  socket.on("join_table", ({ tableId } = {}) => {
+    if (tableId) {
+      const room = `table:${String(tableId).toLowerCase().trim()}`;
+      socket.join(room);
+      console.log(`📡 Socket ${socket.id} joined room: ${room}`);
+    }
+  });
+
+  socket.on("leave_table", ({ tableId } = {}) => {
+    if (tableId) {
+      const room = `table:${String(tableId).toLowerCase().trim()}`;
+      socket.leave(room);
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("🔌 Socket.IO Client Disconnected:", socket.id);
   });

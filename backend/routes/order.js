@@ -523,7 +523,7 @@ router.post("/save-cart", async (req, res) => {
       // 🔥 LIVE SYNC: Notify all other devices that this table's cart has changed
       const io = req.app.get("io");
       if (io) {
-        io.emit("cart_updated", { tableId: cleanId, orderId: currentOrderId });
+        io.to(`table:${cleanId.toLowerCase()}`).emit("cart_updated", { tableId: cleanId, orderId: currentOrderId });
       }
 
       syncTableStatus(req, cleanId).catch(() => { });
@@ -653,7 +653,7 @@ router.post("/send", async (req, res) => {
           items: sentItems,
           createdAt: Date.now()
         });
-        io.emit("cart_updated", { tableId: cleanId, orderId: finalOrderId });
+        io.to(`table:${cleanId.toLowerCase()}`).emit("cart_updated", { tableId: cleanId, orderId: finalOrderId });
         io.emit("kot_printed", { tableId: cleanId, orderId: finalOrderId });
       }
 
@@ -883,8 +883,8 @@ router.post("/complete", async (req, res) => {
     // 🔥 UNIFIED SIGNAL: Use order_status_update for consistency
     const io = req.app.get("io");
     if (io) {
-      io.emit("order_closed", { tableId: cleanId });
-      io.emit("order_status_update", {
+      req.app.get("io")?.to(`table:${cleanId.toLowerCase()}`).emit("order_closed", { tableId: cleanId });
+      req.app.get("io")?.emit("order_status_update", {
         tableId: cleanId,
         action: "CLOSE",
         orderId: updated?.CurrentOrderId
@@ -951,7 +951,7 @@ router.post("/checkout", async (req, res) => {
     // 🔥 KDS & GLOBAL SYNC: Harmonized signals
     const io = req.app.get("io");
     if (io) {
-      io.emit("order_closed", {
+      req.app.get("io")?.to(`table:${cleanId.toLowerCase()}`).emit("order_closed", {
         tableId: cleanId,
         tableNo: updated?.tableNo,
         section: updated?.section
@@ -1138,7 +1138,7 @@ router.post("/delete-cart-item", async (req, res) => {
       syncTableStatus(req, cleanId).catch(() => { });
       const io = req.app.get("io");
       if (io) {
-        io.emit("cart_updated", { tableId: cleanId });
+        req.app.get("io")?.to(`table:${cleanId.toLowerCase()}`).emit("cart_updated", { tableId: cleanId });
       }
     }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 // import axios from "axios";
+import { io } from "socket.io-client";
 import LoginPage from "./LoginPage";
 import "./App.css";
 import { BASE_URL } from "./Configs/api";
@@ -184,6 +185,42 @@ function App() {
     });
 
   }, [cart, paymentDone]);
+
+  // Real-time Sync Effect
+  useEffect(() => {
+    if (!tableId) return;
+
+    // Connect to the base URL (not /api)
+    const socket = io(BASE_URL);
+
+    socket.on("connect", () => {
+      console.log("Connected to real-time sync server");
+      socket.emit("join_table", { tableId });
+    });
+
+    socket.on("cart_updated", async (data) => {
+      if (data && data.tableId && String(data.tableId).toLowerCase() === String(tableId).toLowerCase()) {
+        console.log("Real-time sync: cart updated on another device");
+        // Wait for any in-flight local saves to finish first to avoid race conditions
+        if (pendingSaveRef.current) {
+          try { await pendingSaveRef.current; } catch (_) {}
+        }
+        await loadCart(tableId);
+      }
+    });
+
+    socket.on("order_closed", (data) => {
+      if (data && data.tableId && String(data.tableId).toLowerCase() === String(tableId).toLowerCase()) {
+        console.log("Real-time sync: order closed on another device");
+        window.location.reload(); 
+      }
+    });
+
+    return () => {
+      socket.emit("leave_table", { tableId });
+      socket.disconnect();
+    };
+  }, [tableId]);
 
   const loadKitchens = async () => {
     try {

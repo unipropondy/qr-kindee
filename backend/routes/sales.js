@@ -1207,7 +1207,7 @@ router.post("/save", async (req, res) => {
           const io = req.app.get("io");
           if (io) {
             io.emit("table_status_updated", { tableId: cleanTableId.toLowerCase(), status: 1, totalAmount: remainingTotal });
-            io.emit("cart_updated", { tableId: cleanTableId.toLowerCase(), orderId: displayOrderId });
+            io.to(`table:${cleanTableId.toLowerCase()}`).emit("cart_updated", { tableId: cleanTableId.toLowerCase(), orderId: displayOrderId });
           }
         } else {
           // Fully paid or normal sale: complete cleanup
@@ -1223,8 +1223,8 @@ router.post("/save", async (req, res) => {
           const io = req.app.get("io");
           if (io) {
             io.emit("table_status_updated", { tableId: cleanTableId.toLowerCase(), status: 0, totalAmount: 0 });
-            io.emit("cart_updated", { tableId: cleanTableId.toLowerCase() });
-            io.emit("order_closed", { tableId: cleanTableId.toLowerCase(), tableNo: tableNo, orderId: displayOrderId });
+            io.to(`table:${cleanTableId.toLowerCase()}`).emit("cart_updated", { tableId: cleanTableId.toLowerCase() });
+            io.to(`table:${cleanTableId.toLowerCase()}`).emit("order_closed", { tableId: cleanTableId.toLowerCase(), tableNo: tableNo, orderId: displayOrderId });
           }
 
           // 🚀 CLEANUP MERGED SOURCE TABLES AS WELL (Bullet 5)
@@ -1276,8 +1276,8 @@ router.post("/save", async (req, res) => {
                     tableNo: childTableNo,
                     section: childSection
                   });
-                  io.emit("cart_updated", { tableId: childTableId.toLowerCase() });
-                  io.emit("order_closed", { tableId: childTableId.toLowerCase(), tableNo: childTableNo, orderId: displayOrderId });
+                  io.to(`table:${childTableId.toLowerCase()}`).emit("cart_updated", { tableId: childTableId.toLowerCase() });
+                  io.to(`table:${childTableId.toLowerCase()}`).emit("order_closed", { tableId: childTableId.toLowerCase(), tableNo: childTableNo, orderId: displayOrderId });
                 }
               }
             }
