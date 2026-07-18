@@ -316,7 +316,8 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
     isProcesse,
     isReady,
     isDelivered,
-    ComboDetailsJSON
+    ComboDetailsJSON,
+    start_date
   )
   VALUES
   (
@@ -341,7 +342,10 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
     0,
     0,
     0,
-    @comboDetailsJSON
+    @comboDetailsJSON,
+       (SELECT TOP 1 StartDate
+     FROM DateEntry
+     ORDER BY CreatedDate DESC)
   )
 `);
     }
