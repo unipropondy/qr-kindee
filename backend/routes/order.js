@@ -608,8 +608,7 @@ router.post("/send", async (req, res) => {
       }
       const sentItems = clientItems.map(item => ({
         ...item,
-        // status: (item.status === 'VOIDED' || item.StatusCode === 0) ? 'VOIDED' : 'SENT'
-        status: (item.status === 'VOIDED' || item.StatusCode === 0) ? 'VOIDED' : 'NEW'
+        status: (item.status === 'VOIDED' || item.StatusCode === 0) ? 'VOIDED' : (item.status || 'SENT')
       }));
 
       // 3. FORCE SYNC with the new Professional ID
