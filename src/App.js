@@ -574,7 +574,7 @@ function App() {
         i === index
           ? {
             ...item,
-            qty: (item.qty || 1) + 1,
+            qty: Number(item.qty || 1) + 1,
           }
           : item
       )
@@ -1713,14 +1713,11 @@ function App() {
                                   <button
                                     className="qty-btn"
                                     onClick={() => decreaseQty(index)}
-                                    // disabled={
-                                    //   (item.status && item.status === "SENT") ||
-                                    //   isCartLoading
-                                    // }
-                                    // style={{ opacity: ((item.status && item.status !== "NEW") || isCartLoading) ? 0.5 : 1 }}
-                                    style={{
-                                      opacity: 1
-                                    }}
+                                    disabled={
+                                      (item.status && item.status !== "NEW") ||
+                                      isCartLoading
+                                    }
+                                    style={{ opacity: ((item.status && item.status !== "NEW") || isCartLoading) ? 0.5 : 1 }}
                                   >
                                     -
                                   </button>
@@ -1732,14 +1729,11 @@ function App() {
                                   <button
                                     className="qty-btn"
                                     onClick={() => increaseQty(index)}
-                                    //  disabled={
-                                    //   (item.status && item.status === "SENT") ||
-                                    //   isCartLoading
-                                    // }
-                                    // style={{ opacity: ((item.status && item.status !== "NEW") || isCartLoading) ? 0.5 : 1 }}
-                                    style={{
-                                      opacity: 1
-                                    }}
+                                     disabled={
+                                      (item.status && item.status !== "NEW") ||
+                                      isCartLoading
+                                    }
+                                    style={{ opacity: ((item.status && item.status !== "NEW") || isCartLoading) ? 0.5 : 1 }}
                                   >
                                     +
                                   </button>
