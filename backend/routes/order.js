@@ -206,6 +206,26 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
     //   }
     // }
 
+    // if (!lineItemId || lineItemId.length < 10) {
+    //   const matchCheck = await transaction.request()
+    //     .input("orderId", sql.UniqueIdentifier, orderGuid)
+    //     .input("dishId", sql.UniqueIdentifier, finalProdId)
+    //     .query(`
+    //   SELECT TOP 1 OrderDetailId
+    //   FROM RestaurantOrderDetailCur
+    //   WHERE OrderId = @orderId
+    //     AND DishId = @dishId
+    //     AND StatusCode <> 0
+    //   ORDER BY CreatedOn DESC
+    // `);
+
+    //   if (matchCheck.recordset.length > 0) {
+    //     lineItemId = matchCheck.recordset[0].OrderDetailId;
+    //   } else {
+    //     lineItemId = require("crypto").randomUUID();
+    //   }
+    // }
+
     if (!lineItemId || lineItemId.length < 10) {
       const matchCheck = await transaction.request()
         .input("orderId", sql.UniqueIdentifier, orderGuid)
@@ -215,7 +235,7 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
       FROM RestaurantOrderDetailCur
       WHERE OrderId = @orderId
         AND DishId = @dishId
-        AND StatusCode <> 0
+        AND StatusCode NOT IN (2,3,4)
       ORDER BY CreatedOn DESC
     `);
 
@@ -585,7 +605,7 @@ router.post("/send", async (req, res) => {
         finalOrderId === "#NEW" ||
         finalOrderId === "PENDING"
       ) {
-       finalOrderId = await getOrGenerateOrderId(req, cleanId);
+        finalOrderId = await getOrGenerateOrderId(req, cleanId);
       }
 
       // 2. FORCE SENT STATUS — use items from client, or fall back to DB items
@@ -781,7 +801,7 @@ router.post("/cancel", async (req, res) => {
     // const transaction = new sql.Transaction(pool);
     // await transaction.begin();
     try {
-     
+
       let settlementId = crypto.randomUUID();
 
       // 2. Insert into SettlementHeader (Cancelled Status)
