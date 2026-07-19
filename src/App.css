@@ -938,3 +938,19 @@ body {
   align-items: center;
   width: 100%;
 }
+
+.sold-out {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sold-out-badge {
+  margin-top: 6px;
+  display: inline-block;
+  background: #e53935;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+}

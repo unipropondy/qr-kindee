@@ -94,6 +94,7 @@ function App() {
       try {
         const res = await fetch(`${API}/paymodes/qrs`);
         const data = await res.json();
+
         if (data.paynow) {
           setPaynowUpiId(data.paynow);
           setTempPaynowUpiId(data.paynow);
@@ -204,7 +205,7 @@ function App() {
         console.log("Real-time sync: cart updated on another device");
         // Wait for any in-flight local saves to finish first to avoid race conditions
         if (pendingSaveRef.current) {
-          try { await pendingSaveRef.current; } catch (_) {}
+          try { await pendingSaveRef.current; } catch (_) { }
         }
         await loadCart(tableId);
       }
@@ -213,7 +214,7 @@ function App() {
     socket.on("order_closed", (data) => {
       if (data && data.tableId && String(data.tableId).toLowerCase() === String(tableId).toLowerCase()) {
         console.log("Real-time sync: order closed on another device");
-        window.location.reload(); 
+        window.location.reload();
       }
     });
 
@@ -1635,7 +1636,14 @@ function App() {
                 {!showCartPage && (
                   <div className="dish-list">
                     {filteredItems.map((dish) => (
-                      <div className="dish-card" key={dish.DishId} onClick={() => openModifiers(dish)}
+                      <div
+                        className={`dish-card ${dish.IsSoldOut ? "sold-out" : ""}`}
+                        key={dish.DishId}
+                        onClick={() => {
+                          if (!dish.IsSoldOut) {
+                            openModifiers(dish);
+                          }
+                        }}
                         style={{
                           backgroundColor: dish.IsServiceCharge ? "#FFF3F3" : "#fff",
 
@@ -1665,15 +1673,23 @@ function App() {
                           }}
                         >
                           {dish.Name}
+
+                          {dish.IsSoldOut && (
+                            <div className="sold-out-badge">
+                              Sold Out
+                            </div>
+                          )}
                         </div>
-                        <div
-                          className="dish-price"
-                          style={{
-                            color: dish.IsServiceCharge ? "#D32F2F" : "#F97316",
-                          }}
-                        >
-                          ${dish.Price.toFixed(2)}
-                        </div>
+                        {!dish.IsSoldOut && (
+                          <div
+                            className="dish-price"
+                            style={{
+                              color: dish.IsServiceCharge ? "#D32F2F" : "#F97316",
+                            }}
+                          >
+                            ${dish.Price.toFixed(2)}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1696,7 +1712,7 @@ function App() {
                             // Wait for any in-flight save to finish first,
                             // so newly-added items are persisted before we reload from DB
                             if (pendingSaveRef.current) {
-                              try { await pendingSaveRef.current; } catch (_) {}
+                              try { await pendingSaveRef.current; } catch (_) { }
                             }
                             await loadCart(tableId);
                           }}
@@ -1805,7 +1821,7 @@ function App() {
                                   <button
                                     className="qty-btn"
                                     onClick={() => increaseQty(index)}
-                                     disabled={
+                                    disabled={
                                       (item.status && item.status !== "NEW") ||
                                       isCartLoading
                                     }

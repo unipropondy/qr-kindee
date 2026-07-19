@@ -116,6 +116,7 @@ router.get("/dishes/all", async (req, res) => {
         ISNULL(d.IsOpenItem, 0) AS IsOpenItem,
         ISNULL(d.isServiceCharge, 1) AS isServiceCharge,
         ISNULL(d.IsCombo, 0) AS IsCombo,
+        ISNULL(d.IsSoldOut, 0) AS IsSoldOut,
         ISNULL(ckt.KitchenTypeCode, '2') as KitchenTypeCode,
         ISNULL(ISNULL(ckt.KitchenTypeName, cat.CategoryName), 'KITCHEN') as KitchenTypeName,
         pm.PrinterPath AS PrinterIP
@@ -159,6 +160,7 @@ router.get("/dishes/group/:DishGroupId", async (req, res) => {
               ISNULL(d.isServiceCharge, 1) AS isServiceCharge,
               ISNULL(d.IsOpenItem, 0) AS IsOpenItem,
               ISNULL(d.IsCombo, 0) AS IsCombo,
+              ISNULL(d.IsSoldOut, 0) AS IsSoldOut,
               ISNULL(ckt.KitchenTypeCode, '2') AS KitchenTypeCode,
               ISNULL(ISNULL(ckt.KitchenTypeName, cat.CategoryName), 'KITCHEN') AS KitchenTypeName,
               pm.PrinterPath AS PrinterIP
@@ -580,7 +582,7 @@ router.get("/company/settings", async (req, res) => {
       let queryCols = [];
       if (colCheck.recordset[0]?.cntKot > 0) queryCols.push("Enablekotqr");
       if (colCheck.recordset[0]?.cntCombo > 0) queryCols.push("EnableCombo");
-      
+
       if (queryCols.length > 0) {
         const appSettings = await pool.request().query(`
           SELECT TOP 1 ${queryCols.join(", ")} FROM AppSettings
