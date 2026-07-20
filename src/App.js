@@ -943,6 +943,8 @@ function App() {
         })),
       };
 
+      console.log("SAVE PAYLOAD:", JSON.stringify(payload, null, 2));
+
       const res = await fetch(`${API}/order/save-cart`, {
 
         method: "POST",
