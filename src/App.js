@@ -492,7 +492,7 @@ function App() {
 
     const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + (Number(m.Price) || 0), 0);
     const finalPrice = (Number(comboConfig.basePrice) || 0) + totalSurcharge + modifierPriceTotal;
-
+    console.log("chosenModifiers:", chosenModifiers);
     const newCartItem = {
       ...selectedDish,
       cartId: crypto.randomUUID(),
@@ -526,7 +526,7 @@ function App() {
 
     const modifierPriceTotal = chosenModifiers.reduce((sum, m) => sum + (Number(m.Price) || 0), 0);
     const finalPrice = Number(selectedDish.Price || selectedDish.price || 0) + modifierPriceTotal;
-
+    console.log("chosenModifiers:", chosenModifiers);
     const newCartItem = {
       ...selectedDish,
       cartId: crypto.randomUUID(),
