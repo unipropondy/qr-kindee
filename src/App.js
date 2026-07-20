@@ -1680,16 +1680,19 @@ function App() {
                             </div>
                           )}
                         </div>
-                        {!dish.IsSoldOut && (
-                          <div
-                            className="dish-price"
-                            style={{
-                              color: dish.IsServiceCharge ? "#D32F2F" : "#F97316",
-                            }}
-                          >
-                            ${dish.Price.toFixed(2)}
-                          </div>
-                        )}
+                        <div
+                          className="dish-price"
+                          style={{
+                            color: dish.IsSoldOut
+                              ? "#9CA3AF"
+                              : dish.IsServiceCharge
+                              ? "#D32F2F"
+                              : "#F97316",
+                            textDecoration: dish.IsSoldOut ? "line-through" : "none",
+                          }}
+                        >
+                          ${dish.Price.toFixed(2)}
+                        </div>
                       </div>
                     ))}
                   </div>
