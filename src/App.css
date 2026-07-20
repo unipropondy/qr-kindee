@@ -960,3 +960,20 @@ body {
   font-weight: bold;
   z-index: 9999;
 }
+
+.combo-selection-list {
+  margin-top: 6px;
+}
+
+.combo-group-name {
+  color: #ff6b00;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.combo-option {
+  margin-left: 14px;
+  color: #555;
+  font-size: 13px;
+  margin-top: 2px;
+}

@@ -1686,8 +1686,8 @@ function App() {
                             color: dish.IsSoldOut
                               ? "#9CA3AF"
                               : dish.IsServiceCharge
-                              ? "#D32F2F"
-                              : "#F97316",
+                                ? "#D32F2F"
+                                : "#F97316",
                             textDecoration: dish.IsSoldOut ? "line-through" : "none",
                           }}
                         >
@@ -1761,9 +1761,26 @@ function App() {
 
                                 <div className="ci-name">
 
-                                  <div className="ci-title">
-                                    {item.Name || item.name}
-                                  </div>
+                                  {item.comboSelections?.length > 0 && (
+                                    <div className="combo-selection-list">
+                                      {item.comboSelections.map((group, index) => (
+                                        <div key={index} className="combo-group">
+                                          <div className="combo-group-name">
+                                            {group.groupName}
+                                          </div>
+
+                                          {group.items?.map((option, idx) => (
+                                            <div key={idx} className="combo-option">
+                                              ↳ {option.name}
+                                              {((option.surcharge || 0) + (option.dishPrice || 0)) > 0 && (
+                                                <> (+${((option.surcharge || 0) + (option.dishPrice || 0)).toFixed(2)})</>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
 
                                   {item.selectedMods?.length > 0 && (
                                     <div className="ci-mods">
