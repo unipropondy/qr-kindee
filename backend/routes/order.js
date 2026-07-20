@@ -722,6 +722,7 @@ router.get("/cart/:tableId", async (req, res) => {
   d.PricePerUnit as price,
   ISNULL(dish.Name, d.DishName) as name,
   d.ModifiersJSON,
+  d.ComboDetailsJSON,
   d.Remarks as note,
   d.isTakeAway as isTakeaway,
   CASE d.StatusCode
