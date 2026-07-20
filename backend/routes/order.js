@@ -182,12 +182,7 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
 
     let lineItemId = item.lineItemId || item.ItemId;
     const statusCodes = { 'NEW': 1, 'SENT': 2, 'READY': 3, 'SERVED': 4, 'HOLD': 5, 'VOIDED': 0 };
-    // Default to 1 (NEW) so QR guest items saved without an explicit status are treated as NEW.
-    // The /send route always explicitly maps items to 'SENT', so those stay at StatusCode=2.
-    const itemStatusKey = item.status || item.Status;
-    const currentStatusCode = itemStatusKey !== undefined && itemStatusKey !== null
-      ? (statusCodes[itemStatusKey] ?? 1)
-      : 1;
+    const currentStatusCode = statusCodes[item.status || item.Status] || 2;
     const dishName = String(
       item.name || item.ProductName || "Dish"
     ).substring(0, 50);
@@ -1428,15 +1423,6 @@ router.post("/complete-online-payment", async (req, res) => {
 
     console.log(`🔍 [PAYMENT] Using OrderId: ${guidOrderId}`);
 
-    // ── STEP 1.5: QUEUE KOTs NOW (while items are still StatusCode=1/NEW) ──────
-    // Must run BEFORE the StatusCode=2 update below, so only NEW items are printed.
-    // Previously-sent items are already StatusCode=2 and won't be included.
-    try {
-      await generateAndQueueKOTs(orderId);
-    } catch (kotErr) {
-      console.error("[PAYMENT] Failed to queue KOT (non-fatal):", kotErr.message);
-    }
-
     // ── STEP 2: UPDATE ORDER STATUS ──────────────────────────────────────────
     await transaction.request()
       .input("orderNo", sql.NVarChar(50), orderId)
@@ -1736,7 +1722,11 @@ router.post("/complete-online-payment", async (req, res) => {
     await transaction.commit();
     console.log(`✅ [PAYMENT] ✅✅✅ ALL COMPLETE for order ${orderId}`);
 
-    // KOTs already queued before StatusCode update (Step 1.5 above)
+    try {
+      await generateAndQueueKOTs(orderId);
+    } catch (err) {
+      console.error("Failed to queue KOT:", err);
+    }
 
     try {
       // Also print checkout receipt for online payments
