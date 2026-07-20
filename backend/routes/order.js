@@ -182,7 +182,12 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
 
     let lineItemId = item.lineItemId || item.ItemId;
     const statusCodes = { 'NEW': 1, 'SENT': 2, 'READY': 3, 'SERVED': 4, 'HOLD': 5, 'VOIDED': 0 };
-    const currentStatusCode = statusCodes[item.status || item.Status] || 2;
+    // Default to 1 (NEW) so QR guest items saved without an explicit status are treated as NEW.
+    // The /send route always explicitly maps items to 'SENT', so those stay at StatusCode=2.
+    const itemStatusKey = item.status || item.Status;
+    const currentStatusCode = itemStatusKey !== undefined && itemStatusKey !== null
+      ? (statusCodes[itemStatusKey] ?? 1)
+      : 1;
     const dishName = String(
       item.name || item.ProductName || "Dish"
     ).substring(0, 50);
