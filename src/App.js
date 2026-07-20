@@ -1683,12 +1683,7 @@ function App() {
                         <div
                           className="dish-price"
                           style={{
-                            color: dish.IsSoldOut
-                              ? "#9CA3AF"
-                              : dish.IsServiceCharge
-                                ? "#D32F2F"
-                                : "#F97316",
-                            textDecoration: dish.IsSoldOut ? "line-through" : "none",
+                            color: dish.IsServiceCharge ? "#D32F2F" : "#F97316",
                           }}
                         >
                           ${dish.Price.toFixed(2)}
@@ -1761,26 +1756,9 @@ function App() {
 
                                 <div className="ci-name">
 
-                                  {item.comboSelections?.length > 0 && (
-                                    <div className="combo-selection-list">
-                                      {item.comboSelections.map((group, index) => (
-                                        <div key={index} className="combo-group">
-                                          <div className="combo-group-name">
-                                            {group.groupName}
-                                          </div>
-
-                                          {group.items?.map((option, idx) => (
-                                            <div key={idx} className="combo-option">
-                                              ↳ {option.name}
-                                              {((option.surcharge || 0) + (option.dishPrice || 0)) > 0 && (
-                                                <> (+${((option.surcharge || 0) + (option.dishPrice || 0)).toFixed(2)})</>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
+                                  <div className="ci-title">
+                                    {item.Name || item.name}
+                                  </div>
 
                                   {item.selectedMods?.length > 0 && (
                                     <div className="ci-mods">

@@ -140,8 +140,9 @@ router.get("/dishes/all", async (req, res) => {
 router.get("/dishes/group/:DishGroupId", async (req, res) => {
   try {
     const dishGroupId = req.params.DishGroupId;
-    // NOTE: Caching is intentionally skipped for this endpoint so that
-    // real-time fields such as IsSoldOut are always returned fresh from the DB.
+    const cacheKey = `dishes_group_${dishGroupId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return res.json(cached);
 
     const pool = await poolPromise;
     const result = await pool
@@ -198,6 +199,7 @@ router.get("/dishes/group/:DishGroupId", async (req, res) => {
  
           ORDER BY d.Name ASC
       `);
+    setCache(cacheKey, result.recordset);
     res.json(result.recordset);
   } catch (err) {
     res.status(500).send(err.message);
