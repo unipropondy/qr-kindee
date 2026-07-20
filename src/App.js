@@ -503,6 +503,7 @@ function App() {
       basePrice: comboConfig.basePrice,
       comboSelections: chosenSelections,
       selectedMods: chosenModifiers,
+      modifiers: chosenModifiers,
       status: "NEW"
     };
 
@@ -534,6 +535,7 @@ function App() {
       price: finalPrice,
       Price: finalPrice,
       selectedMods: chosenModifiers,
+      modifiers: chosenModifiers,
       comboSelections: [],
       status: "NEW"
     };
