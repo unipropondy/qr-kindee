@@ -944,13 +944,19 @@ body {
   cursor: not-allowed;
 }
 
+.dish-card {
+  position: relative;
+}
+
 .sold-out-badge {
-  margin-top: 6px;
-  display: inline-block;
-  background: #e53935;
-  color: #fff;
-  padding: 3px 8px;
-  border-radius: 5px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ff3b30;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: bold;
+  z-index: 9999;
 }
