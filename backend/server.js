@@ -76,6 +76,37 @@ io.on("connection", (socket) => {
   });
 });
 
+// 🔄 Auto-detect Database Dish Updates and Invalidate Cache
+const { poolPromise } = require("./config/db");
+let lastDishChecksum = null;
+
+async function checkDishChecksum() {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT CHECKSUM_AGG(BINARY_CHECKSUM(DishId, Name, currentcost, IsActive, IsSoldOut)) AS ChecksumVal
+      FROM DishMaster
+    `);
+    const currentChecksum = result.recordset[0]?.ChecksumVal;
+    
+    if (lastDishChecksum !== null && lastDishChecksum !== currentChecksum) {
+      console.log(`🔄 DishMaster changed (checksum: ${lastDishChecksum} -> ${currentChecksum}). Invalidating cache and notifying clients...`);
+      // Clear posRoutes cache
+      posRoutes.clearMenuCache();
+      // Emit socket event to all clients
+      io.emit("menu_updated");
+    }
+    lastDishChecksum = currentChecksum;
+  } catch (err) {
+    console.error("⚠️ Error in checkDishChecksum:", err.message);
+  }
+}
+
+// Start checking 5 seconds after server start, then run every 5 seconds
+setTimeout(() => {
+  setInterval(checkDishChecksum, 5000);
+}, 5000);
+
 server.listen(PORT, () => {
   console.log(`🚀 Server running on ${PORT}`);
-});
+});

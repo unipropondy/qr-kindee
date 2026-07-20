@@ -475,7 +475,7 @@ router.get("/splitdishes", async (req, res) => {
   }
 });
 
-router.post("/clear-cache", (req, res) => {
+function clearMenuCache() {
   cache.clear();
   console.log("⚡ [MenuCache] Cache INVALIDATION: All menu cache cleared");
   imageCache.clear();
@@ -488,8 +488,15 @@ router.post("/clear-cache", (req, res) => {
   } catch (err) {
     console.error("Failed to clear combo cache:", err.message);
   }
+}
+
+router.clearMenuCache = clearMenuCache;
+
+router.post("/clear-cache", (req, res) => {
+  clearMenuCache();
   res.json({ success: true, message: "Menu and image cache cleared successfully" });
 });
+
 
 /* ================= PAYMODES ================= */
 router.get("/paymodes/qrs", async (req, res) => {

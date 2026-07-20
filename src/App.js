@@ -188,6 +188,11 @@ function App() {
 
   }, [cart, paymentDone]);
 
+  const activeGroupRef = useRef(activeGroup);
+  useEffect(() => {
+    activeGroupRef.current = activeGroup;
+  }, [activeGroup]);
+
   // Real-time Sync Effect
   useEffect(() => {
     if (!tableId) return;
@@ -215,6 +220,14 @@ function App() {
       if (data && data.tableId && String(data.tableId).toLowerCase() === String(tableId).toLowerCase()) {
         console.log("Real-time sync: order closed on another device");
         window.location.reload();
+      }
+    });
+
+    socket.on("menu_updated", async () => {
+      console.log("Real-time sync: menu updated in database");
+      await loadKitchens();
+      if (activeGroupRef.current) {
+        await loadDishes(activeGroupRef.current);
       }
     });
 
