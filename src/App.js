@@ -1094,7 +1094,7 @@ function App() {
 
           note: item.note || "",
 
-          status: "SENT",
+          status: item.status || "NEW",
         })),
       };
 
