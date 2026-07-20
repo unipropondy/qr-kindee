@@ -350,7 +350,7 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
     @cost,
     @cost * @qty,
     @cost * @qty,
-    @statusCode,
+    1, -- Always start as 1 (NEW) so KOT printing works reliably
     @userId,
     GETDATE(),
     @mods,
