@@ -1423,6 +1423,15 @@ router.post("/complete-online-payment", async (req, res) => {
 
     console.log(`🔍 [PAYMENT] Using OrderId: ${guidOrderId}`);
 
+    // ── STEP 1.5: QUEUE KOTs NOW (while items are still StatusCode=1/NEW) ──────
+    // Must run BEFORE the StatusCode=2 update below, so only NEW items are printed.
+    // Previously-sent items are already StatusCode=2 and won't be included.
+    try {
+      await generateAndQueueKOTs(orderId);
+    } catch (kotErr) {
+      console.error("[PAYMENT] Failed to queue KOT (non-fatal):", kotErr.message);
+    }
+
     // ── STEP 2: UPDATE ORDER STATUS ──────────────────────────────────────────
     await transaction.request()
       .input("orderNo", sql.NVarChar(50), orderId)
@@ -1722,11 +1731,7 @@ router.post("/complete-online-payment", async (req, res) => {
     await transaction.commit();
     console.log(`✅ [PAYMENT] ✅✅✅ ALL COMPLETE for order ${orderId}`);
 
-    try {
-      await generateAndQueueKOTs(orderId);
-    } catch (err) {
-      console.error("Failed to queue KOT:", err);
-    }
+    // KOTs already queued before StatusCode update (Step 1.5 above)
 
     try {
       // Also print checkout receipt for online payments
