@@ -1363,6 +1363,13 @@ router.post("/complete-online-payment", async (req, res) => {
     const pMethod = (paymentMethod || "ONLINE").toUpperCase();
     const settlementId = crypto.randomUUID();
 
+    // Generate and queue KOT for any newly added items (StatusCode = 1) before they are updated to 2
+    try {
+      await generateAndQueueKOTs(orderId);
+    } catch (err) {
+      console.error("Failed to queue KOT for online payment:", err);
+    }
+
     await transaction.begin();
 
     // ── STEP 1: GET OR CREATE ORDER ──────────────────────────────────────────
@@ -1722,11 +1729,7 @@ router.post("/complete-online-payment", async (req, res) => {
     await transaction.commit();
     console.log(`✅ [PAYMENT] ✅✅✅ ALL COMPLETE for order ${orderId}`);
 
-    try {
-      await generateAndQueueKOTs(orderId);
-    } catch (err) {
-      console.error("Failed to queue KOT:", err);
-    }
+    // KOT already generated before transaction began to ensure only new items print
 
     try {
       // Also print checkout receipt for online payments
