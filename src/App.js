@@ -1033,9 +1033,26 @@ function App() {
                 let changed = false;
                 const updatedCart = prev.map(item => {
                   if (!item.OrderDetailId && !item.lineItemId) {
-                    const match = cartData.items.find(b =>
-                      (b.id || b.DishId || b.dishId) == (item.DishId || item.id)
-                    );
+                    // const match = cartData.items.find(b =>
+                    //   (b.id || b.DishId || b.dishId) == (item.DishId || item.id)
+                    // );
+
+                    const match = cartData.items.find((b) => {
+                      const dbModKey = (b.modifiers || [])
+                        .map((m) => m.ModifierId || m.ModifierID)
+                        .sort()
+                        .join("-");
+
+                      const itemModKey = (item.selectedMods || [])
+                        .map((m) => m.ModifierID || m.ModifierId)
+                        .sort()
+                        .join("-");
+
+                      return (
+                        (b.id || b.DishId || b.dishId) === (item.DishId || item.id) &&
+                        dbModKey === itemModKey
+                      );
+                    });
                     if (match && (match.OrderDetailId || match.lineItemId)) {
                       changed = true;
                       return {
