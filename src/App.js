@@ -1265,8 +1265,9 @@ function App() {
   };
 
   const addWithModifiers = () => {
-
+    console.count("ADD WITH MODIFIERS");
     if (!selectedDish) return;
+    actionRef.current = "INSERT";
 
     const allAvailable = [...modifiers, ...customMods];
 
