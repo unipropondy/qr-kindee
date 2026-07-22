@@ -416,7 +416,9 @@ console.log("QTY:", item.qty);
           FROM RestaurantOrderDetailCur
           WHERE OrderId = @orderId
       ),
-      entry_Status = 'q'
+      entry_Status = 'q',
+      isOrderClosed = 0,
+      StatusCode = 1
   WHERE OrderId = @orderId
 `);
 }
