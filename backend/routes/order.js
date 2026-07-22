@@ -190,6 +190,7 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
     const noteInfo = resolveItemNote(item);
     const takeawayInfo = resolveItemTakeaway(item);
     const modsJSON = JSON.stringify(item.modifiers || []).substring(0, 500);
+    const comboDetailsJSON = JSON.stringify(item.comboSelections || []).substring(0, 4000);
 
     // 🕵️‍♂️ SMART-MATCH: If ID is missing, try to find an existing item with same Dish & Modifiers
     // if (!lineItemId || lineItemId.length < 10) {
@@ -233,6 +234,7 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
         .input("orderId", sql.UniqueIdentifier, orderGuid)
         .input("dishId", sql.UniqueIdentifier, finalProdId)
         .input("mods", sql.NVarChar(sql.MAX), modsJSON)
+        .input("combo", sql.NVarChar(sql.MAX), comboDetailsJSON)
         .query(`
           SELECT TOP 1 OrderDetailId
           FROM RestaurantOrderDetailCur
@@ -240,6 +242,7 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
             AND DishId = @dishId
             AND ISNULL(CAST(ModifiersJSON AS NVARCHAR(MAX)), '') =
                 ISNULL(@mods, '')
+                AND ISNULL(CAST(ComboDetailsJSON AS NVARCHAR(MAX)), '') = ISNULL(@combo, '')
             AND StatusCode NOT IN (2,3,4)
           ORDER BY CreatedOn DESC
         `);
@@ -250,7 +253,12 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
         lineItemId = crypto.randomUUID();
       }
       }
-    const comboDetailsJSON = JSON.stringify(item.comboSelections || []).substring(0, 4000);
+    // const comboDetailsJSON = JSON.stringify(item.comboSelections || []).substring(0, 4000);
+
+    console.log("MATCH LINEITEM:", lineItemId);
+console.log("ITEM:", item.name);
+console.log("COMBO:", comboDetailsJSON);
+console.log("QTY:", item.qty);
 
     const detailCheck = await transaction.request().input("detailId", sql.UniqueIdentifier, lineItemId).query("SELECT OrderDetailId,StatusCode FROM RestaurantOrderDetailCur WHERE OrderDetailId = @detailId");
     if (detailCheck.recordset.length > 0) {
@@ -725,6 +733,7 @@ router.get("/cart/:tableId", async (req, res) => {
   d.Quantity as qty,
   d.PricePerUnit as price,
   ISNULL(dish.Name, d.DishName) as name,
+  item.IsServiceCharge,
   d.ModifiersJSON,
   d.ComboDetailsJSON,
   d.Remarks as note,

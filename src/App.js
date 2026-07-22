@@ -1202,6 +1202,7 @@ if (oldTableId && oldTableId !== tid) {
         const fromDB = data.items.map((item) => ({
 
           ...item,
+          isServiceCharge: Number(item.isServiceCharge || 0),
 
           lineItemId:
             item.OrderDetailId ||
@@ -1523,8 +1524,18 @@ if (oldTableId && oldTableId !== tid) {
   );
 
   // Service Charge Calculation — applied to full subtotal
-  const serviceCharge =
-    subTotal * (serviceChargePercent / 100);
+ const serviceChargeEligibleTotal = cart.reduce(
+  (sum, item) =>
+    Number(item.isServiceCharge || 0) === 1
+      ? sum +
+        Number(item.Price || item.price || 0) *
+        Number(item.qty || 1)
+      : sum,
+  0
+);
+
+const serviceCharge =
+  serviceChargeEligibleTotal * (serviceChargePercent / 100);
 
   // GST Calculation
   const beforeGST = subTotal + serviceCharge;
@@ -1538,6 +1549,11 @@ if (oldTableId && oldTableId !== tid) {
     0,
     subTotal + serviceCharge + gstAmount - promoAmount
   ).toFixed(2);
+
+  console.log("Cart:", cart);
+console.log("Eligible Total:", serviceChargeEligibleTotal);
+console.log("Service Charge %:", serviceChargePercent);
+console.log("Service Charge:", serviceCharge);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -1929,6 +1945,7 @@ if (oldTableId && oldTableId !== tid) {
                             <span>Subtotal</span>
                             <span>${subTotal.toFixed(2)}</span>
                           </div>
+                        
 
                           {serviceCharge > 0 && (
                             <div className="cart-total-row">
