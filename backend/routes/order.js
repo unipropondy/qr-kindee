@@ -643,6 +643,27 @@ router.post("/send", async (req, res) => {
         status: (item.status === 'VOIDED' || item.StatusCode === 0) ? 'VOIDED' : (item.status || 'SENT')
       }));
 
+      const alreadySent = await pool.request()
+        .input("tableId", sql.UniqueIdentifier, cleanId)
+        .query(`
+          SELECT COUNT(*) AS cnt
+          FROM RestaurantOrderDetailCur d
+          JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId
+          WHERE
+            (LTRIM(RTRIM(h.Tableno)) =
+                (SELECT LTRIM(RTRIM(TableNumber))
+                FROM TableMaster
+                WHERE TableId = @tableId))
+            AND d.StatusCode = 1
+        `);
+
+      if (alreadySent.recordset[0].cnt === 0) {
+        return res.json({
+          success: false,
+          message: "Order already placed by another device."
+        });
+      }
+
       // 3. FORCE SYNC with the new Professional ID
       await syncToProfessionalTables(
         { request: () => pool.request() },

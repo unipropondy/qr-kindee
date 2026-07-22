@@ -1163,6 +1163,12 @@ if (oldTableId && oldTableId !== tid) {
       console.log("ORDER SEND:", data);
 
       if (data.success) {
+        setCart(prev =>
+    prev.map(item => ({
+      ...item,
+      status: "SENT"
+    }))
+  );
         if (data.orderId) {
           setCurrentOrderId(data.orderId);
           currentOrderIdRef.current = data.orderId;
@@ -1173,7 +1179,7 @@ if (oldTableId && oldTableId !== tid) {
         setShowPaymentPopup(true);
       }
       else {
-        alert(data.error || "Failed to place order");
+        alert(data.error || "This order has already been placed by another customer. Your cart has been refreshed.");
       }
 
     } catch (err) {
@@ -1974,6 +1980,7 @@ console.log("Service Charge:", serviceCharge);
                           <button
                             className="checkout-btn"
                             onClick={placeOrder}
+                            disabled={!cart.some(item => item.status === "NEW")}
                           >
                             Place Order
                           </button>
