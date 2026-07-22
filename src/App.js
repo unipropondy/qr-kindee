@@ -154,11 +154,22 @@ function App() {
     const table = params.get("table");
     const tid = params.get("tableId");
 
+    const oldTableId = localStorage.getItem("tableId");
+
+if (oldTableId && oldTableId !== tid) {
+  localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("qr_pos_user");
+  localStorage.removeItem("promoCode");
+  localStorage.removeItem("promoAmount");
+  localStorage.removeItem("availableCredit");
+}
+
     if (table) {
       setTableNo(table);
     }
 
     if (tid) {
+      localStorage.setItem("tableId", tid);
       setTableId(tid);
       loadCart(tid);
     }
@@ -948,7 +959,11 @@ function App() {
             })),
 
           comboSelections: item.comboSelections || [],
-          lineItemId: item.lineItemId || item.OrderDetailId || null,
+          // lineItemId: item.lineItemId || item.OrderDetailId || null,
+          lineItemId:
+  item.status === "NEW"
+    ? null
+    : (item.lineItemId || item.OrderDetailId || null),
 
           note: item.note || "",
 
@@ -1120,7 +1135,11 @@ function App() {
             })),
 
           comboSelections: item.comboSelections || [],
-          lineItemId: item.lineItemId || item.OrderDetailId || null,
+          // lineItemId: item.lineItemId || item.OrderDetailId || null,
+          lineItemId:
+  item.status === "NEW"
+    ? null
+    : (item.lineItemId || item.OrderDetailId || null),
 
           note: item.note || "",
 
