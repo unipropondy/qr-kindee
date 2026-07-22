@@ -1052,22 +1052,43 @@ if (oldTableId && oldTableId !== tid) {
                     //   (b.id || b.DishId || b.dishId) == (item.DishId || item.id)
                     // );
 
+                    // const match = cartData.items.find((b) => {
+                    //   const dbModKey = (b.modifiers || [])
+                    //     .map((m) => m.ModifierId || m.ModifierID)
+                    //     .sort()
+                    //     .join("-");
+
+                    //   const itemModKey = (item.selectedMods || [])
+                    //     .map((m) => m.ModifierID || m.ModifierId)
+                    //     .sort()
+                    //     .join("-");
+
+                    //   return (
+                    //     (b.id || b.DishId || b.dishId) === (item.DishId || item.id) &&
+                    //     dbModKey === itemModKey
+                    //   );
+                    // });
+
                     const match = cartData.items.find((b) => {
-                      const dbModKey = (b.modifiers || [])
-                        .map((m) => m.ModifierId || m.ModifierID)
-                        .sort()
-                        .join("-");
+                    const dbModKey = (b.modifiers || [])
+                      .map(m => m.ModifierId || m.ModifierID)
+                      .sort()
+                      .join("-");
 
-                      const itemModKey = (item.selectedMods || [])
-                        .map((m) => m.ModifierID || m.ModifierId)
-                        .sort()
-                        .join("-");
+                    const itemModKey = (item.selectedMods || [])
+                      .map(m => m.ModifierID || m.ModifierId)
+                      .sort()
+                      .join("-");
 
-                      return (
-                        (b.id || b.DishId || b.dishId) === (item.DishId || item.id) &&
-                        dbModKey === itemModKey
-                      );
-                    });
+                    const dbComboKey = JSON.stringify(b.comboSelections || []);
+                    const itemComboKey = JSON.stringify(item.comboSelections || []);
+
+                    return (
+                      (b.id || b.DishId || b.dishId) === (item.DishId || item.id) &&
+                      dbModKey === itemModKey &&
+                      dbComboKey === itemComboKey
+                    );
+                  });
                     if (match && (match.OrderDetailId || match.lineItemId)) {
                       changed = true;
                       return {
