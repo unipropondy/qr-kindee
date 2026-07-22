@@ -229,33 +229,27 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
     
    if (!lineItemId || lineItemId.length < 10) {
 
-        const comboDetailsJSON = JSON.stringify(item.comboSelections || []);
+      const matchCheck = await transaction.request()
+        .input("orderId", sql.UniqueIdentifier, orderGuid)
+        .input("dishId", sql.UniqueIdentifier, finalProdId)
+        .input("mods", sql.NVarChar(sql.MAX), modsJSON)
+        .query(`
+          SELECT TOP 1 OrderDetailId
+          FROM RestaurantOrderDetailCur
+          WHERE OrderId = @orderId
+            AND DishId = @dishId
+            AND ISNULL(CAST(ModifiersJSON AS NVARCHAR(MAX)), '') =
+                ISNULL(@mods, '')
+            AND StatusCode NOT IN (2,3,4)
+          ORDER BY CreatedOn DESC
+        `);
 
-        const matchCheck = await transaction.request()
-          .input("orderId", sql.UniqueIdentifier, orderGuid)
-          .input("dishId", sql.UniqueIdentifier, finalProdId)
-          .input("mods", sql.NVarChar(sql.MAX), modsJSON)
-          .input("combo", sql.NVarChar(sql.MAX), comboDetailsJSON)
-          .query(`
-            SELECT TOP 1 OrderDetailId
-            FROM RestaurantOrderDetailCur
-            WHERE OrderId = @orderId
-              AND DishId = @dishId
-              AND ISNULL(CAST(ModifiersJSON AS NVARCHAR(MAX)), '') =
-                  ISNULL(@mods, '')
-              AND ISNULL(CAST(ComboDetailsJSON AS NVARCHAR(MAX)), '') =
-          ISNULL(@combo, '')
-              AND StatusCode NOT IN (2,3,4)
-            ORDER BY CreatedOn DESC
-          `);
-
-        if (matchCheck.recordset.length > 0) {
-          lineItemId = matchCheck.recordset[0].OrderDetailId;
-        } else {
-          lineItemId = crypto.randomUUID();
-        }
+      if (matchCheck.recordset.length > 0) {
+        lineItemId = matchCheck.recordset[0].OrderDetailId;
+      } else {
+        lineItemId = crypto.randomUUID();
       }
-
+      }
     const comboDetailsJSON = JSON.stringify(item.comboSelections || []).substring(0, 4000);
 
     const detailCheck = await transaction.request().input("detailId", sql.UniqueIdentifier, lineItemId).query("SELECT OrderDetailId,StatusCode FROM RestaurantOrderDetailCur WHERE OrderDetailId = @detailId");
