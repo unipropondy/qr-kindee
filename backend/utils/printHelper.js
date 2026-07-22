@@ -305,7 +305,7 @@ async function generateAndQueueKOTs(orderId) {
             return;
         }
         const pName = item.PrinterName || 'Kitchen Printer';
-        const ip = item.PrinterIP || '192.168.0.22'; 
+        const ip = item.PrinterIP || '192.168.68.184'; 
         
         if (!printerGroups[pName]) {
             printerGroups[pName] = {
@@ -491,7 +491,7 @@ async function generateAndQueueReceipt(orderId, paymentMode = 'ONLINE') {
     const pType = isTakeaway ? 3 : 1;
 
     // 5. Fetch Printer IP
-    let printerIp = '192.168.0.22';
+    let printerIp = '192.168.68.178';
     let printerName = 'Counter Printer';
     
     const printerRes = await pool.request()
