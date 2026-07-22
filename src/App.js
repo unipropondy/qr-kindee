@@ -1193,6 +1193,9 @@ if (oldTableId && oldTableId !== tid) {
 
       const data = await res.json();
 
+      console.log("LOAD CART RESPONSE:", data);
+console.log("CurrentOrderId From API:", data.currentOrderId);
+console.log("Items:", data.items);
       console.log("LOAD CART:", data);
 
       console.log("LOAD CART ITEMS:", JSON.stringify(data.items, null, 2));
@@ -1239,6 +1242,8 @@ if (oldTableId && oldTableId !== tid) {
               item.status === "NEW"
           );
           return [...fromDB, ...localOnly];
+          console.log("Current Order ID:", currentOrderId);
+console.log("Table ID:", tableId);
         });
       }
 

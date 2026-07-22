@@ -733,7 +733,7 @@ router.get("/cart/:tableId", async (req, res) => {
   d.Quantity as qty,
   d.PricePerUnit as price,
   ISNULL(dish.Name, d.DishName) as name,
-  item.IsServiceCharge,
+   dish.isServiceCharge AS isServiceCharge,
   d.ModifiersJSON,
   d.ComboDetailsJSON,
   d.Remarks as note,
