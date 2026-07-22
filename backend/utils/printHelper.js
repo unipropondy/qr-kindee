@@ -298,6 +298,20 @@ async function generateAndQueueKOTs(orderId) {
     }
 
     // 3. Group Items by Printer Name (to keep KOT slips separated by kitchen type)
+    let fallbackKitchenIp = '192.168.68.184';
+    try {
+        const fallbackRes = await pool.request().query(`
+            SELECT TOP 1 PrinterPath 
+            FROM PrintMaster 
+            WHERE PrinterType = 2 AND IsActive = 1 AND PrinterPath IS NOT NULL AND PrinterPath <> ''
+        `);
+        if (fallbackRes.recordset.length > 0) {
+            fallbackKitchenIp = fallbackRes.recordset[0].PrinterPath;
+        }
+    } catch (err) {
+        console.error("[generateAndQueueKOTs] Fallback IP fetch error:", err.message);
+    }
+
     const printerGroups = {};
     items.forEach(item => {
         if (item.IsPrinterEnabled === 0 || item.IsPrinterEnabled === false) {
@@ -305,7 +319,7 @@ async function generateAndQueueKOTs(orderId) {
             return;
         }
         const pName = item.PrinterName || 'Kitchen Printer';
-        const ip = item.PrinterIP || '192.168.68.184'; 
+        const ip = item.PrinterIP || fallbackKitchenIp; 
         
         if (!printerGroups[pName]) {
             printerGroups[pName] = {
@@ -498,14 +512,14 @@ async function generateAndQueueReceipt(orderId, paymentMode = 'ONLINE') {
         .input('PrinterType', sql.Int, pType)
         .query(`SELECT TOP 1 PrinterIP, PrinterName FROM PrintMaster WHERE PrinterType = @PrinterType AND IsActive = 1`);
         
-    if (printerRes.recordset.length > 0) {
+    if (printerRes.recordset.length > 0 && printerRes.recordset[0].PrinterIP) {
         printerIp = printerRes.recordset[0].PrinterIP;
         printerName = printerRes.recordset[0].PrinterName;
     } else {
         // Ultimate fallback to Cashier
         const cashierRes = await pool.request()
             .query(`SELECT TOP 1 PrinterIP, PrinterName FROM PrintMaster WHERE PrinterType = 1 AND IsActive = 1`);
-        if (cashierRes.recordset.length > 0) {
+        if (cashierRes.recordset.length > 0 && cashierRes.recordset[0].PrinterIP) {
             printerIp = cashierRes.recordset[0].PrinterIP;
             printerName = cashierRes.recordset[0].PrinterName;
         }
