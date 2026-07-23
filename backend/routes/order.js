@@ -684,7 +684,7 @@ router.post("/send", async (req, res) => {
                 (SELECT LTRIM(RTRIM(TableNumber))
                 FROM TableMaster
                 WHERE TableId = @tableId))
-            AND d.StatusCode = 1
+            AND d.StatusCode NOT IN (2,3,4)
         `);
 
       if (alreadySent.recordset[0].cnt === 0) {
