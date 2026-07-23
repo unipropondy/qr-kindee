@@ -783,6 +783,7 @@ router.get("/cart/:tableId", async (req, res) => {
   d.DishId as id,
   d.Quantity as qty,
   d.PricePerUnit as price,
+  d.StatusCode as statusCode,
   ISNULL(dish.Name, d.DishName) as name,
    dish.isServiceCharge AS isServiceCharge,
   d.ModifiersJSON,
@@ -803,7 +804,7 @@ JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId
 LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
 WHERE
   h.isOrderClosed = 0
-  AND d.StatusCode <> 0
+  AND d.StatusCode IN (1,2)
   AND (
     h.OrderNumber = @orderNo
     OR h.OrderId = (
@@ -821,6 +822,15 @@ ORDER BY d.CreatedOn ASC
       ...i,
       modifiers: i.ModifiersJSON ? (() => { try { return JSON.parse(i.ModifiersJSON); } catch { return []; } })() : []
     }));
+
+    console.log("QR CART SQL RESULT COUNT:", items.length);
+    items.forEach((item) => {
+      console.log("QR CART ITEM DEBUG:", {
+        dishName: item.name,
+        statusCode: item.statusCode,
+        status: item.status
+      });
+    });
 
     res.json({ items, currentOrderId: isRealOrderId ? currentOrderId : null });
   } catch (err) { res.status(500).json({ error: err.message }); }
