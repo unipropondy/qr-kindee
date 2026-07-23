@@ -531,9 +531,35 @@ if (oldTableId && oldTableId !== tid) {
       status: "NEW"
     };
 
+    // actionRef.current = "INSERT";
+    // setCart(prev => [...prev, newCartItem]);
+    // setShowComboCustomizer(false);
     actionRef.current = "INSERT";
-    setCart(prev => [...prev, newCartItem]);
-    setShowComboCustomizer(false);
+
+setCart(prev => {
+    const existing = prev.find(item =>
+        (item.DishId || item.id) === (selectedDish.DishId || selectedDish.id) &&
+        (item.comboSelections || []).length === 0 &&
+        JSON.stringify(item.selectedMods || []) === JSON.stringify(chosenModifiers) &&
+        item.status !== "SENT"
+    );
+
+  if (existing) {
+    return prev.map(item =>
+      item === existing
+        ? {
+            ...item,
+            qty: (item.qty || 1) + 1,
+            status: "NEW"
+          }
+        : item
+    );
+  }
+
+  return [...prev, newCartItem];
+});
+
+setShowComboCustomizer(false);
   };
 
   const handleAddBaseComboDirectly = () => {
@@ -564,9 +590,35 @@ if (oldTableId && oldTableId !== tid) {
       status: "NEW"
     };
 
+    // actionRef.current = "INSERT";
+    // setCart(prev => [...prev, newCartItem]);
+    // setShowComboCustomizer(false);
     actionRef.current = "INSERT";
-    setCart(prev => [...prev, newCartItem]);
-    setShowComboCustomizer(false);
+
+setCart(prev => {
+const existing = prev.find(item =>
+  (item.DishId || item.id) === (selectedDish.DishId || selectedDish.id) &&
+  (item.comboSelections || []).length === 0 &&
+  JSON.stringify(item.selectedMods || []) === JSON.stringify(chosenModifiers) &&
+  item.status !== "SENT"
+);
+
+  if (existing) {
+    return prev.map(item =>
+      item === existing
+        ? {
+            ...item,
+            qty: (item.qty || 1) + 1,
+            status: "NEW"
+          }
+        : item
+    );
+  }
+
+  return [...prev, newCartItem];
+});
+
+setShowComboCustomizer(false);
   };
 
   const loadModifiers = async (dishId) => {
@@ -601,11 +653,22 @@ if (oldTableId && oldTableId !== tid) {
       //     (item.DishId || item.id) === dish.DishId
       // );
 
-      const existing = prev.find(
-        (item) =>
-          (item.DishId || item.id) === dish.DishId &&
-          item.status !== "SENT"
-      );
+    console.log("Clicked DishId:", dish.DishId);
+
+prev.forEach((x) => {
+  console.log(
+    "Cart DishId:", x.DishId,
+    "id:", x.id,
+    "status:", x.status
+  );
+});
+
+const existing = prev.find(
+  (item) =>
+    (item.DishId || item.id) === dish.DishId &&
+    item.status !== "SENT"
+);
+
       // already exists
       if (existing) {
         return prev.map((item) =>
@@ -920,6 +983,7 @@ if (oldTableId && oldTableId !== tid) {
   };
 
   const saveCartToBackend = async () => {
+    console.log("SAVE CART CALLED");
     // ✅ FIX: Prevent inserting new records into RestaurantOrderDetailCur after payment
     if (paymentDone) {
       console.log("[saveCart] Skipped — payment already done.");
@@ -1003,6 +1067,7 @@ if (oldTableId && oldTableId !== tid) {
             const cartData = await cartRes.json();
 
             if (cartData && cartData.items) {
+                  skipSaveRef.current = true;
               setCart(prev => {
                 let changed = false;
                 const updatedCart = prev.map(item => {

@@ -247,6 +247,12 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
           ORDER BY CreatedOn DESC
         `);
 
+        console.log("========== MATCH CHECK ==========");
+console.log("Dish :", finalProdId);
+console.log("Mods :", modsJSON);
+console.log("Combo :", comboDetailsJSON);
+console.log("Found :", matchCheck.recordset);
+
       if (matchCheck.recordset.length > 0) {
         lineItemId = matchCheck.recordset[0].OrderDetailId;
       } else {
@@ -259,8 +265,11 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
 console.log("ITEM:", item.name);
 console.log("COMBO:", comboDetailsJSON);
 console.log("QTY:", item.qty);
+console.log("LINE ITEM ID:", lineItemId);
+
 
     const detailCheck = await transaction.request().input("detailId", sql.UniqueIdentifier, lineItemId).query("SELECT OrderDetailId,StatusCode FROM RestaurantOrderDetailCur WHERE OrderDetailId = @detailId");
+    console.log("DETAIL CHECK:", detailCheck.recordset);
     if (detailCheck.recordset.length > 0) {
       if (
         detailCheck.recordset[0].StatusCode !== 4 &&
@@ -291,7 +300,26 @@ console.log("QTY:", item.qty);
             String(noteInfo.value || "").substring(0, 100)
           )
           .input("isTakeaway", sql.Bit, takeawayInfo.value ? 1 : 0)
-          .query("UPDATE RestaurantOrderDetailCur SET Quantity = @qty, PricePerUnit = @cost, ActualAmount = @cost * @qty, TotalDetailLineAmount = @cost * @qty, StatusCode = 1, Description = @dishName, DishName = @dishName, ModifiedBy = @userId, ModifiedOn = GETDATE(), ModifiersJSON = @mods, ComboDetailsJSON = @comboDetailsJSON, OrderNumber = @orderNo, Remarks = @note, isTakeAway = @isTakeaway WHERE OrderDetailId = @detailId AND StatusCode <> 4 and StatusCode <> 3 and StatusCode <> 2");
+         .query(`
+UPDATE RestaurantOrderDetailCur
+SET
+    Quantity = @qty,
+    PricePerUnit = @cost,
+    ActualAmount = @cost * @qty,
+    TotalDetailLineAmount = @cost * @qty,
+    StatusCode = 1,
+    Description = @dishName,
+    DishName = @dishName,
+    ModifiedBy = @userId,
+    ModifiedOn = GETDATE(),
+    ModifiersJSON = @mods,
+    ComboDetailsJSON = @comboDetailsJSON,
+    OrderNumber = @orderNo,
+    Remarks = @note,
+    isTakeAway = @isTakeaway
+WHERE OrderDetailId = @detailId
+  AND StatusCode NOT IN (2,3,4)
+`);
       }
     } else {
       await transaction.request()
@@ -637,7 +665,7 @@ router.post("/send", async (req, res) => {
             WHERE (LTRIM(RTRIM(h.Tableno)) = (SELECT LTRIM(RTRIM(TableNumber)) FROM TableMaster WHERE TableId = @tableNo)
               OR LTRIM(RTRIM(h.Tableno)) = LTRIM(RTRIM(@tableNo))) 
               AND (h.isOrderClosed = 0 OR h.isOrderClosed IS NULL) 
-              AND d.StatusCode <> 0`);
+             AND d.StatusCode =1`);
         clientItems = dbItems.recordset;
       }
       const sentItems = clientItems.map(item => ({
