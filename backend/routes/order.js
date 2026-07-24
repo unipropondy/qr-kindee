@@ -804,7 +804,7 @@ JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId
 LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
 WHERE
   h.isOrderClosed = 0
-  AND d.StatusCode IN (1,2)
+  AND d.StatusCode = 1
   AND (
     h.OrderNumber = @orderNo
     OR h.OrderId = (
@@ -831,6 +831,12 @@ ORDER BY d.CreatedOn ASC
         status: item.status
       });
     });
+
+    console.log("QR CART RESPONSE BEFORE SEND:", items.map((item) => ({
+      dishName: item.name,
+      statusCode: item.statusCode,
+      status: item.status,
+    })));
 
     res.json({ items, currentOrderId: isRealOrderId ? currentOrderId : null });
   } catch (err) { res.status(500).json({ error: err.message }); }

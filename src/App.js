@@ -1264,6 +1264,7 @@ const existing = prev.find(
 
       const data = await res.json();
 
+      console.log("LOAD CART API RESPONSE BEFORE setCart:", data);
       console.log("LOAD CART RESPONSE:", data);
 console.log("CurrentOrderId From API:", data.currentOrderId);
 console.log("Items:", data.items);
