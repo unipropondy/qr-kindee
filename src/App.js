@@ -2170,12 +2170,49 @@ console.log("Service Charge:", serviceCharge);
                       {comboError && (
                         <div style={{ color: 'red', fontSize: '13px', textAlign: 'center', marginBottom: '5px' }}>{comboError}</div>
                       )}
-                      <button className="btn-add" onClick={handleAddComboToCart} style={{ width: '100%', background: '#f97316', color: 'white', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+                     {/* <button className="btn-add" onClick={handleAddComboToCart} style={{ width: '100%', background: '#f97316', color: 'white', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
                         Add Combo to Cart - ${calculateComboTotal().toFixed(2)}
                       </button>
                       <button className="btn-cancel" onClick={handleAddBaseComboDirectly} style={{ width: '100%', background: '#eceff1', color: '#37474f', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
                         Add Base Combo Directly (Skip Selections)
+                      </button>*/}
+                      <button
+                      className="btn-add"
+                      onClick={handleAddComboToCart}
+                      style={{
+                        width: "100%",
+                        background: "#f97316",
+                        color: "white",
+                        border: "none",
+                        padding: "12px",
+                        borderRadius: "12px",
+                        fontWeight: "bold",
+                        fontSize: "15px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Add Combo to Cart - ${calculateComboTotal().toFixed(2)}
+                    </button>
+
+                    {Number(selectedDish?.Price || selectedDish?.price || 0) > 0 && (
+                      <button
+                        className="btn-cancel"
+                        onClick={handleAddBaseComboDirectly}
+                        style={{
+                          width: "100%",
+                          background: "#eceff1",
+                          color: "#37474f",
+                          border: "none",
+                          padding: "12px",
+                          borderRadius: "12px",
+                          fontWeight: "bold",
+                          fontSize: "15px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Add Base Combo Directly (Skip Selections)
                       </button>
+                    )}
                     </div>
                   </div>
                 </div>
