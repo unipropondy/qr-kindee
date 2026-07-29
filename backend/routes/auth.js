@@ -98,6 +98,22 @@ router.post("/signup", async (req, res) => {
       }
     }
 
+    // ✅ Check phone number
+    const phoneResult = await pool.request()
+      .input("phone", sql.NVarChar, phone)
+      .query(`
+        SELECT TOP 1 MemberId
+        FROM MemberMaster
+        WHERE Phone = @phone
+      `);
+
+    if (phoneResult.recordset.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Phone number already registered"
+      });
+    }
+
     const userResult = await pool.request()
       .input("username", sql.VarChar, username)
       .query(`

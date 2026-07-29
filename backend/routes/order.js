@@ -804,7 +804,7 @@ JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId
 LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
 WHERE
   h.isOrderClosed = 0
-  AND d.StatusCode = 1
+  AND d.StatusCode IN (1,2)
   AND (
     h.OrderNumber = @orderNo
     OR h.OrderId = (
@@ -831,12 +831,6 @@ ORDER BY d.CreatedOn ASC
         status: item.status
       });
     });
-
-    console.log("QR CART RESPONSE BEFORE SEND:", items.map((item) => ({
-      dishName: item.name,
-      statusCode: item.statusCode,
-      status: item.status,
-    })));
 
     res.json({ items, currentOrderId: isRealOrderId ? currentOrderId : null });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -1256,9 +1250,7 @@ router.post("/delete-cart-item", async (req, res) => {
 });
 
 router.get("/order-details/:orderId", async (req, res) => {
-
   try {
-
     const { orderId } = req.params;
 
     const pool = await poolPromise;
@@ -1272,9 +1264,9 @@ router.get("/order-details/:orderId", async (req, res) => {
             o.OrderNumber,
 
             CASE
-                WHEN d.StatusCode = '2' THEN 'PREPARING'
-                WHEN d.StatusCode = '3' THEN 'READY'
-                WHEN d.StatusCode = '1' THEN 'PREPARING'
+                WHEN d.StatusCode = 2 THEN 'PREPARING'
+                WHEN d.StatusCode = 3 THEN 'READY'
+                WHEN d.StatusCode = 1 THEN 'PREPARING'
                 ELSE 'UNKNOWN'
             END AS StatusLabel,
 
@@ -1282,36 +1274,31 @@ router.get("/order-details/:orderId", async (req, res) => {
             d.DishName,
             d.Quantity,
             d.PricePerUnit AS Price,
-             d.ComboDetailsJSON,
-             d.ModifiersJSON
-
+            d.ComboDetailsJSON,
+            d.ModifiersJSON
 
         FROM RestaurantOrderCur o
-
         INNER JOIN RestaurantOrderDetailCur d
             ON o.OrderId = d.OrderId
 
-        WHERE ISNULL(d.isDelivered, 0) = 0
-          AND d.StatusCode IN ('1','2', '3')
+        WHERE ISNULL(d.isDelivered,0) = 0
+          AND d.StatusCode IN (1,2,3)
           AND o.entry_status = 'q'
-          AND d.OrderNumber = @orderNo
+          AND o.OrderNumber = @orderNo
 
-        ORDER BY o.OrderDateTime ASC
+        ORDER BY d.CreatedOn ASC
       `);
 
     res.json(result.recordset);
 
   } catch (err) {
-
     console.log(err);
 
     res.status(500).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
-
   }
-
 });
 
 //online payment process
