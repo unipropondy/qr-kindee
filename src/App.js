@@ -1001,7 +1001,7 @@ const existing = prev.find(
 
         userId: "00000000-0000-0000-0000-000000000000",
 
-        items: cart.map((item) => ({
+        items: cart.filter(item => !item.status || item.status === "NEW").map((item) => ({
 
           id: item.DishId || item.id,
 
@@ -1178,7 +1178,7 @@ const existing = prev.find(
 
         userId: "00000000-0000-0000-0000-000000000000",
 
-        items: cart.map((item) => ({
+        items: cart.filter(item => !item.status || item.status === "NEW").map((item) => ({
 
           id: item.DishId || item.id,
 
