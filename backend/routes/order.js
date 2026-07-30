@@ -247,12 +247,6 @@ async function syncToProfessionalTables(transaction, tableId, displayOrderId, it
           ORDER BY CreatedOn DESC
         `);
 
-        console.log("========== MATCH CHECK ==========");
-console.log("Dish :", finalProdId);
-console.log("Mods :", modsJSON);
-console.log("Combo :", comboDetailsJSON);
-console.log("Found :", matchCheck.recordset);
-
       if (matchCheck.recordset.length > 0) {
         lineItemId = matchCheck.recordset[0].OrderDetailId;
       } else {
@@ -265,11 +259,8 @@ console.log("Found :", matchCheck.recordset);
 console.log("ITEM:", item.name);
 console.log("COMBO:", comboDetailsJSON);
 console.log("QTY:", item.qty);
-console.log("LINE ITEM ID:", lineItemId);
-
 
     const detailCheck = await transaction.request().input("detailId", sql.UniqueIdentifier, lineItemId).query("SELECT OrderDetailId,StatusCode FROM RestaurantOrderDetailCur WHERE OrderDetailId = @detailId");
-    console.log("DETAIL CHECK:", detailCheck.recordset);
     if (detailCheck.recordset.length > 0) {
       if (
         detailCheck.recordset[0].StatusCode !== 4 &&
@@ -300,26 +291,7 @@ console.log("LINE ITEM ID:", lineItemId);
             String(noteInfo.value || "").substring(0, 100)
           )
           .input("isTakeaway", sql.Bit, takeawayInfo.value ? 1 : 0)
-         .query(`
-UPDATE RestaurantOrderDetailCur
-SET
-    Quantity = @qty,
-    PricePerUnit = @cost,
-    ActualAmount = @cost * @qty,
-    TotalDetailLineAmount = @cost * @qty,
-    StatusCode = 1,
-    Description = @dishName,
-    DishName = @dishName,
-    ModifiedBy = @userId,
-    ModifiedOn = GETDATE(),
-    ModifiersJSON = @mods,
-    ComboDetailsJSON = @comboDetailsJSON,
-    OrderNumber = @orderNo,
-    Remarks = @note,
-    isTakeAway = @isTakeaway
-WHERE OrderDetailId = @detailId
-  AND StatusCode NOT IN (2,3,4)
-`);
+          .query("UPDATE RestaurantOrderDetailCur SET Quantity = @qty, PricePerUnit = @cost, ActualAmount = @cost * @qty, TotalDetailLineAmount = @cost * @qty, StatusCode = 1, Description = @dishName, DishName = @dishName, ModifiedBy = @userId, ModifiedOn = GETDATE(), ModifiersJSON = @mods, ComboDetailsJSON = @comboDetailsJSON, OrderNumber = @orderNo, Remarks = @note, isTakeAway = @isTakeaway WHERE OrderDetailId = @detailId AND StatusCode <> 4 and StatusCode <> 3 and StatusCode <> 2");
       }
     } else {
       await transaction.request()
@@ -444,9 +416,7 @@ WHERE OrderDetailId = @detailId
           FROM RestaurantOrderDetailCur
           WHERE OrderId = @orderId
       ),
-      entry_Status = 'q',
-      isOrderClosed = 0,
-      StatusCode = 1
+      entry_Status = 'q'
   WHERE OrderId = @orderId
 `);
 }
@@ -665,7 +635,7 @@ router.post("/send", async (req, res) => {
             WHERE (LTRIM(RTRIM(h.Tableno)) = (SELECT LTRIM(RTRIM(TableNumber)) FROM TableMaster WHERE TableId = @tableNo)
               OR LTRIM(RTRIM(h.Tableno)) = LTRIM(RTRIM(@tableNo))) 
               AND (h.isOrderClosed = 0 OR h.isOrderClosed IS NULL) 
-             AND d.StatusCode =1`);
+              AND d.StatusCode <> 0`);
         clientItems = dbItems.recordset;
       }
       const sentItems = clientItems.map(item => ({
@@ -684,7 +654,7 @@ router.post("/send", async (req, res) => {
                 (SELECT LTRIM(RTRIM(TableNumber))
                 FROM TableMaster
                 WHERE TableId = @tableId))
-            AND d.StatusCode NOT IN (2,3,4)
+            AND d.StatusCode = 1
         `);
 
       if (alreadySent.recordset[0].cnt === 0) {
@@ -783,7 +753,6 @@ router.get("/cart/:tableId", async (req, res) => {
   d.DishId as id,
   d.Quantity as qty,
   d.PricePerUnit as price,
-  d.StatusCode as statusCode,
   ISNULL(dish.Name, d.DishName) as name,
    dish.isServiceCharge AS isServiceCharge,
   d.ModifiersJSON,
@@ -804,7 +773,7 @@ JOIN RestaurantOrderCur h ON d.OrderId = h.OrderId
 LEFT JOIN DishMaster dish ON d.DishId = dish.DishId
 WHERE
   h.isOrderClosed = 0
-  AND d.StatusCode IN (1,2)
+  AND d.StatusCode <> 0
   AND (
     h.OrderNumber = @orderNo
     OR h.OrderId = (
@@ -822,15 +791,6 @@ ORDER BY d.CreatedOn ASC
       ...i,
       modifiers: i.ModifiersJSON ? (() => { try { return JSON.parse(i.ModifiersJSON); } catch { return []; } })() : []
     }));
-
-    console.log("QR CART SQL RESULT COUNT:", items.length);
-    items.forEach((item) => {
-      console.log("QR CART ITEM DEBUG:", {
-        dishName: item.name,
-        statusCode: item.statusCode,
-        status: item.status
-      });
-    });
 
     res.json({ items, currentOrderId: isRealOrderId ? currentOrderId : null });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -1250,7 +1210,9 @@ router.post("/delete-cart-item", async (req, res) => {
 });
 
 router.get("/order-details/:orderId", async (req, res) => {
+
   try {
+
     const { orderId } = req.params;
 
     const pool = await poolPromise;
@@ -1264,9 +1226,9 @@ router.get("/order-details/:orderId", async (req, res) => {
             o.OrderNumber,
 
             CASE
-                WHEN d.StatusCode = 2 THEN 'PREPARING'
-                WHEN d.StatusCode = 3 THEN 'READY'
-                WHEN d.StatusCode = 1 THEN 'PREPARING'
+                WHEN d.StatusCode = '2' THEN 'PREPARING'
+                WHEN d.StatusCode = '3' THEN 'READY'
+                WHEN d.StatusCode = '1' THEN 'PREPARING'
                 ELSE 'UNKNOWN'
             END AS StatusLabel,
 
@@ -1274,31 +1236,36 @@ router.get("/order-details/:orderId", async (req, res) => {
             d.DishName,
             d.Quantity,
             d.PricePerUnit AS Price,
-            d.ComboDetailsJSON,
-            d.ModifiersJSON
+             d.ComboDetailsJSON,
+             d.ModifiersJSON
+
 
         FROM RestaurantOrderCur o
+
         INNER JOIN RestaurantOrderDetailCur d
             ON o.OrderId = d.OrderId
 
-        WHERE ISNULL(d.isDelivered,0) = 0
-          AND d.StatusCode IN (1,2,3)
+        WHERE ISNULL(d.isDelivered, 0) = 0
+          AND d.StatusCode IN ('1','2', '3')
           AND o.entry_status = 'q'
-          AND o.OrderNumber = @orderNo
+          AND d.OrderNumber = @orderNo
 
-        ORDER BY d.CreatedOn ASC
+        ORDER BY o.OrderDateTime ASC
       `);
 
     res.json(result.recordset);
 
   } catch (err) {
+
     console.log(err);
 
     res.status(500).json({
       success: false,
-      error: err.message,
+      error: err.message
     });
+
   }
+
 });
 
 //online payment process
