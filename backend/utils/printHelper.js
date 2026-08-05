@@ -346,7 +346,9 @@ async function generateAndQueueKOTs(orderId) {
             const ip = group.printerIp;
             const storeId = "STORE_001"; // Consistent with UniversalPrinter.js
 
-            // Duplicate Check: See if a PENDING/PROCESSING job already exists for this PrinterName and Order No
+            // Duplicate Check: See if a PENDING/PROCESSING/recently COMPLETED job already exists
+            // Also covers COMPLETED jobs in the last 5 minutes to prevent double-print from
+            // mark-sent + complete-online-payment both calling generateAndQueueKOTs
             const dupCheck = await pool.request()
                 .input('PrinterName', sql.NVarChar(100), group.printerName)
                 .input('SearchText', sql.NVarChar(100), `%Order #: ${orderHeader.OrderNumber}%`)
@@ -354,7 +356,10 @@ async function generateAndQueueKOTs(orderId) {
                     SELECT TOP 1 JobId 
                     FROM PrintJobQueue 
                     WHERE PrinterName = @PrinterName
-                      AND Status IN ('PENDING', 'PROCESSING') 
+                      AND (
+                        Status IN ('PENDING', 'PROCESSING')
+                        OR (Status = 'COMPLETED' AND DATEDIFF(MINUTE, CreatedOn, GETDATE()) <= 5)
+                      )
                       AND Content LIKE @SearchText
                 `);
 
@@ -419,7 +424,10 @@ async function generateAndQueueKOTs(orderId) {
                     SELECT TOP 1 JobId 
                     FROM PrintJobQueue 
                     WHERE PrinterName = @PrinterName 
-                      AND Status IN ('PENDING', 'PROCESSING') 
+                      AND (
+                        Status IN ('PENDING', 'PROCESSING')
+                        OR (Status = 'COMPLETED' AND DATEDIFF(MINUTE, CreatedOn, GETDATE()) <= 5)
+                      )
                       AND Content LIKE @SearchText
                 `);
 
